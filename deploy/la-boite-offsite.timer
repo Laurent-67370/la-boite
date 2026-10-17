@@ -1,0 +1,11 @@
+# Une copie hors site par nuit (03:40), rattrapée au démarrage si le serveur était éteint.
+[Unit]
+Description=Copie chiffrée nocturne de La Boîte hors du VPS
+
+[Timer]
+OnCalendar=*-*-* 03:40:00
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

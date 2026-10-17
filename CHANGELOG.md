@@ -1,5 +1,16 @@
 # Changelog — La Boîte
 
+## v1.4.1 — 2026-10-17
+
+**Copie hors du VPS, chiffrée**
+- `scripts/offsite.sh` : prend la sauvegarde la plus récente, `tar | age -r <clé publique>` (la clé privée n'est jamais sur le serveur), envoi FTPS (TLS imposé, certificat vérifié) sous un nom `.part` puis renommage, **relecture et comparaison SHA-256**, rotation distante (`OFFSITE_KEEP`, 7 par défaut). Mot de passe passé à lftp par variable d'environnement (`--env-password`), jamais visible dans `ps`
+- `deploy/la-boite-offsite.service` + `.timer` (chaque nuit à 03:40, `Persistent=true`, `PrivateTmp`, `UMask=0077`) et `deploy/offsite.env.example` (aucun secret versionné)
+- Procédure de restauration depuis la copie distante dans le README
+
+**Correctif sauvegarde** : la copie de la base est repassée en journal classique avant contrôle et empreinte ; elle tient en un seul fichier autonome (plus de `data.db-wal`/`-shm` parasites créés à l'ouverture)
+
+- CI : installe age + lftp ; tests 72/72 (envoi chiffré de bout en bout vers une cible `file://`, rotation, déchiffrement, clé invalide refusée)
+
 ## v1.4.0 — 2026-10-17
 
 **Sauvegardes** (il n'y en avait aucune)

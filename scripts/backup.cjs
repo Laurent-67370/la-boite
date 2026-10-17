@@ -73,6 +73,11 @@ async function main() {
   const src = new Database(dbPath, { readonly: true, fileMustExist: true });
   await src.backup(path.join(tmp, 'data.db'));
   src.close();
+  // La copie hérite du mode WAL : on la repasse en journal classique pour qu'elle tienne en un seul
+  // fichier autonome (pas de data.db-wal/-shm créés à l'ouverture). Le serveur remet WAL au démarrage.
+  const rw = new Database(path.join(tmp, 'data.db'));
+  rw.pragma('journal_mode = DELETE');
+  rw.close();
   const copy = new Database(path.join(tmp, 'data.db'), { readonly: true });
   const integrity = copy.pragma('integrity_check', { simple: true });
   const counts = {};
