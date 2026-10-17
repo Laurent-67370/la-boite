@@ -1,5 +1,28 @@
 # Changelog — La Boîte
 
+## v1.3.0 — 2026-10-17
+
+**Sécurité** — l'application était publique sans authentification : l'identité n'était qu'un en-tête `X-Member-Id` fourni par le navigateur, donc n'importe qui pouvait tout lire, tout modifier, se faire passer pour l'admin ou téléverser des fichiers sans limite.
+
+- **Code d'accès par membre** (haché scrypt, jamais stocké en clair) ; écran de connexion « Qui êtes-vous ? » + code ; bouton Déconnexion
+- **Sessions** : cookie `HttpOnly`, `SameSite=Lax`, `Secure` derrière HTTPS, 30 jours ; seul le hash SHA-256 du jeton est en base
+- Toute l'API (y compris SSE et téléchargement des pièces jointes) exige une session ; l'auteur des actions vient de la session (en-tête `X-Member-Id` et champs `member_id`/`created_by` ignorés)
+- Droits vérifiés côté serveur : corbeille des cartes et des listes réservée à l'admin, notifications lisibles par leur seul destinataire
+- Anti-CSRF : toute modification exige l'en-tête `X-Requested-With: la-boite` (`403` sinon), en plus de `SameSite=Lax`
+- Anti-force brute : 5 échecs par membre / 20 par IP → blocage 15 min (`429`) ; sans `X-Forwarded-For`, limite par membre seulement
+- Quota total des fichiers joints (500 Mo par défaut, `LA_BOITE_UPLOAD_QUOTA_MB`) → `507`
+- `scripts/set-code.cjs` : définir ou régénérer le code d'un membre (ferme ses sessions)
+- Migration : colonnes `members.code_hash/code_salt`, table `sessions`
+
+**CI** — GitHub Actions lance la suite Playwright sur chaque PR et sur `main` ; Playwright ajouté en dépendance de développement (épinglé). `scripts/visual-sanity.cjs` tourne désormais sur une instance de test jetable (plus jamais sur le port et la base de prod).
+
+**Interface**
+- L'activité du menu se met à jour quand on restaure ou archive (menu ouvert)
+- La corbeille n'est reconstruite que si son contenu change (bouton « Restaurer » stable pendant les événements temps réel)
+- Mobile : en-tête du tableau sur deux lignes, sans chevauchement des boutons
+- Service worker : cache `la-boite-v4`
+- Tests : 64/64 (connexion UI, sessions, usurpation, droits, origine, force brute, quota, script de code)
+
 ## v1.2.1 — 2026-10-17
 
 Correctif.

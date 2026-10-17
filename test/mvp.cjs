@@ -26,6 +26,28 @@ async function checkAsync(name, fn) {
   catch (e) { check(name, false, e.message || e); }
 }
 
+// Sessions de test par membre (cookie lb_session). Les appels gardent la forme { 'X-Member-Id': id } :
+// sans Cookie explicite, cet en-tête est traduit en cookie du membre ; { ANON: 1 } = sans session ;
+// sinon session de l'admin (membre 1). Avec un Cookie explicite, X-Member-Id part tel quel (test d'usurpation).
+const CODES = { 1: '111111', 2: '222222', 3: '333333', 4: '444444' };
+const SESSIONS = {};
+function withAuth(headers) {
+  const h = { 'X-Requested-With': 'la-boite', ...(headers || {}) };
+  if (h.NOCSRF) { delete h.NOCSRF; delete h['X-Requested-With']; }
+  if (h.ANON) { delete h.ANON; return h; }
+  if (h.Cookie) return h;
+  const id = h['X-Member-Id'] || '1';
+  delete h['X-Member-Id'];
+  if (SESSIONS[id]) h.Cookie = SESSIONS[id];
+  return h;
+}
+async function loginAs(id) {
+  const r = await req('POST', '/api/auth/login', { member_id: id, code: CODES[id] }, { ANON: 1 });
+  const set = [].concat(r.headers['set-cookie'] || [])[0] || '';
+  SESSIONS[id] = set.split(';')[0];
+  return r;
+}
+
 function req(method, url, body, extraHeaders) {
   return new Promise((resolve, reject) => {
     const data = body == null ? null : JSON.stringify(body);
@@ -35,7 +57,7 @@ function req(method, url, body, extraHeaders) {
         method,
         headers: {
           ...(data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
-          ...(extraHeaders || {})
+          ...withAuth(extraHeaders)
         }
       },
       (res) => {
@@ -45,7 +67,7 @@ function req(method, url, body, extraHeaders) {
         res.on('end', () => {
           let json = null;
           try { json = JSON.parse(buf); } catch { /* html */ }
-          resolve({ status: res.statusCode, json, text: buf });
+          resolve({ status: res.statusCode, json, text: buf, headers: res.headers });
         });
       }
     );
@@ -58,7 +80,7 @@ function req(method, url, body, extraHeaders) {
 // Requête à corps brut (téléversement de fichier)
 function rawReq(method, url, buf, headers) {
   return new Promise((resolve, reject) => {
-    const r = http.request(`${BASE}${url}`, { method, headers: { 'Content-Length': buf.length, ...headers } }, (res) => {
+    const r = http.request(`${BASE}${url}`, { method, headers: { 'Content-Length': buf.length, ...withAuth(headers) } }, (res) => {
       const chunks = [];
       res.on('data', (c) => chunks.push(c));
       res.on('end', () => {
@@ -91,7 +113,11 @@ function waitForHealth(tries = 50) {
 for (const s of ['', '-wal', '-shm']) fs.existsSync(DB + s) && fs.unlinkSync(DB + s);
 
 const server = spawn(process.execPath, [SERVER], {
-  env: { ...process.env, PORT: String(PORT), SF_TRELLIS_TEST: '1' },
+  env: {
+    ...process.env, PORT: String(PORT), SF_TRELLIS_TEST: '1',
+    LA_BOITE_INITIAL_CODES: Object.entries(CODES).map(([id, c]) => `${id}:${c}`).join(','),
+    LA_BOITE_UPLOAD_QUOTA_MB: '1'
+  },
   stdio: ['ignore', 'pipe', 'pipe']
 });
 const serverLog = [];
@@ -110,8 +136,15 @@ let killed = false;
     const context = await browser.newContext({ baseURL: BASE, locale: 'fr-FR', timezoneId: 'Europe/Paris' });
     const page = await context.newPage();
     page.on('pageerror', (e) => console.log('[pageerror]', e.message));
+    for (const id of Object.keys(CODES)) await loginAs(id);
+    // Connexion par l'interface : écran de connexion, choix du membre, code
     await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#login-overlay:not([hidden]) .login-member', { timeout: 10000 });
+    await page.click('.login-member[data-member-id="1"]');
+    await page.fill('#login-code', CODES[1]);
+    await page.click('#login-submit');
     await page.waitForSelector('.list-wrapper', { timeout: 10000 });
+    check('0. connexion UI (membre + code) → tableau', (await page.textContent('#me-name')) === 'Laurent', await page.textContent('#me-name'));
 
     /* 1. Health */
     const h = await req('GET', '/api/health');
@@ -238,7 +271,7 @@ let killed = false;
     await page2.waitForSelector('.list-wrapper', { timeout: 10000 });
     page.evaluate((listId) => fetch('/api/cards', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'la-boite' },
       body: JSON.stringify({ list_id: listId, title: 'Carte poussée par SSE' })
     }), enCours.id);
     await page2.waitForSelector('.list-card-title:text("Carte poussée par SSE")', { timeout: 8000 });
@@ -359,11 +392,11 @@ let killed = false;
 
     /* 19. Notifications 🔔 */
     const n1 = await req('GET', '/api/members/1/notifications');
-    const n4 = await req('GET', '/api/members/4/notifications');
+    const n4 = await req('GET', '/api/members/4/notifications', null, AS(4));
     check('19a. commentaire de Marina → notif Laurent (membre de la carte)', n1.json.notifications.some((n) => n.kind === 'comment' && n.actor_id === 2), JSON.stringify(n1.json));
     check('19b. mention @Julia → notif mention', n4.json.notifications.some((n) => n.kind === 'mention'), JSON.stringify(n4.json));
     await req('POST', `/api/cards/${proto.id}/members`, { member_id: 3 }, AS(1));
-    const n3 = await req('GET', '/api/members/3/notifications');
+    const n3 = await req('GET', '/api/members/3/notifications', null, AS(3));
     check('19c. ajout à une carte → notif « assigned »', n3.json.unread >= 1 && n3.json.notifications[0].kind === 'assigned', JSON.stringify(n3.json));
     await page.waitForFunction(() => !document.querySelector('#notif-count').hidden, null, { timeout: 6000 });
     await page.click('#btn-notif');
@@ -431,12 +464,12 @@ let killed = false;
     await page.waitForFunction(() => document.querySelector('#modal-vote').classList.contains('is-on'), null, { timeout: 5000 });
     await req('POST', `/api/cards/${proto.id}/votes`, {}, AS(2));
     await req('POST', `/api/cards/${proto.id}/votes`, {}, AS(2));
-    const noActor = await req('POST', `/api/cards/${proto.id}/votes`, {});
+    const noActor = await req('POST', `/api/cards/${proto.id}/votes`, {}, { ANON: 1 });
     await page.waitForFunction((id) => /👍 2/.test(document.querySelector(`.list-card[data-card-id="${id}"] .badge-votes`)?.textContent || ''), String(proto.id), { timeout: 6000 });
     await page.click('#modal-vote');
     await page.waitForFunction(() => !document.querySelector('#modal-vote').classList.contains('is-on'), null, { timeout: 5000 });
     const afterVote = (await allCards()).find((c) => c.id === proto.id);
-    check('23. votes : 1 par membre, retrait, membre requis', JSON.stringify(afterVote.voters) === '[2]' && noActor.status === 400,
+    check('23. votes : 1 par membre, retrait, session requise', JSON.stringify(afterVote.voters) === '[2]' && noActor.status === 401,
       `${JSON.stringify(afterVote.voters)}/${noActor.status}`);
     await page.click('#modal-close');
 
@@ -530,6 +563,76 @@ let killed = false;
     const m2row = m2.prepare('SELECT name, archived FROM lists').get();
     m2.close();
     check('28. migration : colonne lists.archived ajoutée, listes conservées', m2row.name === 'L' && m2row.archived === 0, JSON.stringify(m2row));
+
+    /* ============================ v1.3.0 : accès ============================ */
+
+    /* 29. Session obligatoire, en-tête X-Member-Id ignoré */
+    const anonBoard = await req('GET', '/api/board/1', null, { ANON: 1 });
+    const anonSse = await req('GET', '/api/board/1/events', null, { ANON: 1 });
+    const anonFile = await req('GET', `/api/attachments/${imgId}/file`, null, { ANON: 1 });
+    const health = await req('GET', '/api/health', null, { ANON: 1 });
+    const staticPage = await req('GET', '/', null, { ANON: 1 });
+    const fakeHeader = await req('GET', '/api/board/1', null, { ANON: 1, 'X-Member-Id': '1' });
+    check('29a. sans session : API, SSE et fichiers → 401 ; santé et page publiques',
+      anonBoard.status === 401 && anonSse.status === 401 && anonFile.status === 401 && fakeHeader.status === 401 &&
+      health.status === 200 && staticPage.status === 200,
+      [anonBoard.status, anonSse.status, anonFile.status, fakeHeader.status, health.status, staticPage.status].join('/'));
+    const spoofCard = (await allCards())[0];
+    const spoof = await req('DELETE', `/api/cards/${spoofCard.id}`, null, { Cookie: SESSIONS[3], 'X-Member-Id': '1' });
+    const spoofList = await req('DELETE', `/api/lists/${aFaire.id}`, null, AS(3));
+    const otherNotifs = await req('GET', '/api/members/1/notifications', null, AS(3));
+    const otherRead = await req('POST', '/api/members/1/notifications/read', {}, AS(3));
+    check('29b. membre 3 + X-Member-Id: 1 → pas admin ; notifications d’autrui → 403',
+      spoof.status === 403 && spoofList.status === 403 && otherNotifs.status === 403 && otherRead.status === 403,
+      [spoof.status, spoofList.status, otherNotifs.status, otherRead.status].join('/'));
+    const coAs3 = await req('POST', `/api/cards/${proto.id}/comments`, { text: 'Signé par la session', member_id: 1 }, AS(3));
+    check('29c. auteur = membre de la session (member_id du corps ignoré)', coAs3.status === 201 && coAs3.json.comment.member_id === 3,
+      JSON.stringify(coAs3.json));
+
+    /* 30. Connexion : mauvais code, cookie, déconnexion, force brute, origine */
+    const bad = await req('POST', '/api/auth/login', { member_id: 2, code: '000000' }, { ANON: 1 });
+    const ok2 = await req('POST', '/api/auth/login', { member_id: 2, code: CODES[2] }, { ANON: 1 });
+    const cookieLine = [].concat(ok2.headers['set-cookie'] || [])[0] || '';
+    const tmpCookie = cookieLine.split(';')[0];
+    const me2 = await req('GET', '/api/auth/me', null, { Cookie: tmpCookie });
+    const out = await req('POST', '/api/auth/logout', null, { Cookie: tmpCookie });
+    const afterOut = await req('GET', '/api/auth/me', null, { Cookie: tmpCookie });
+    check('30a. mauvais code 401 ; cookie HttpOnly + SameSite ; déconnexion invalide la session',
+      bad.status === 401 && ok2.status === 200 && /HttpOnly/.test(cookieLine) && /SameSite=Lax/.test(cookieLine) &&
+      me2.json.member.id === 2 && out.status === 200 && afterOut.status === 401,
+      `${bad.status}/${ok2.status}/${cookieLine}/${afterOut.status}`);
+    const tries = [];
+    for (let i = 0; i < 6; i++) tries.push((await req('POST', '/api/auth/login', { member_id: 4, code: '999999' }, { ANON: 1 })).status);
+    const lockedGood = await req('POST', '/api/auth/login', { member_id: 4, code: CODES[4] }, { ANON: 1 });
+    check('30b. 5 échecs → membre bloqué (429), même avec le bon code', tries.slice(0, 5).every((x) => x === 401) &&
+      tries[5] === 429 && lockedGood.status === 429, `${tries.join(',')}/${lockedGood.status}`);
+    const foreign = await req('POST', `/api/cards/${proto.id}/comments`, { text: 'csrf' }, { NOCSRF: 1, 'X-Member-Id': '1' });
+    const foreignLogin = await req('POST', '/api/auth/login', { member_id: 1, code: CODES[1] }, { NOCSRF: 1, ANON: 1 });
+    check('30c. requête sans en-tête anti-CSRF (autre site) → 403, même connexion', foreign.status === 403 &&
+      foreignLogin.status === 403, `${foreign.status}/${foreignLogin.status}`);
+
+    /* 31. Quota de stockage (1 Mo en test) */
+    const quota = await rawReq('POST', `/api/cards/${proto.id}/attachments`, Buffer.alloc(1100 * 1024),
+      { 'Content-Type': 'application/octet-stream', 'X-File-Name': 'trop.bin', 'X-Member-Id': '1' });
+    check('31. quota de stockage dépassé → 507', quota.status === 507, String(quota.status));
+
+    /* 32. Script de définition d'un code */
+    const codeDb = '/tmp/la-boite-code-test.db';
+    for (const sfx of ['', '-wal', '-shm']) fs.existsSync(codeDb + sfx) && fs.unlinkSync(codeDb + sfx);
+    require('../db.js').init(codeDb).close();
+    const { execFileSync } = require('child_process');
+    const outGen = execFileSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'set-code.cjs'), 'Marina'], { env: { ...process.env, DB: codeDb } }).toString();
+    const genCode = (outGen.match(/: (\d{8})\./) || [])[1];
+    let shortRefused = false;
+    try { execFileSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'set-code.cjs'), '2', '123'], { env: { ...process.env, DB: codeDb }, stdio: 'pipe' }); }
+    catch { shortRefused = true; }
+    const cdb = openDb(codeDb);
+    const row = cdb.prepare('SELECT code_hash, code_salt FROM members WHERE id = 2').get();
+    cdb.close();
+    const authMod = require('../auth.js');
+    check('32. set-code : code aléatoire à 8 chiffres, stocké haché, code court refusé', !!genCode &&
+      authMod.verifyCode(genCode, row.code_salt, row.code_hash) && !row.code_hash.includes(genCode) && shortRefused,
+      `${outGen.trim()}/${shortRefused}`);
   } catch (e) {
     check('erreur inattendue', false, e.message || e);
   } finally {

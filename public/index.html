@@ -14,9 +14,11 @@
 <body>
   <header class="topbar" id="topbar">
     <div class="brand" id="brand"><span class="brand-box" aria-hidden="true"><span class="brand-slot"></span></span><span class="brand-name">La Boîte</span></div>
-    <label class="user-pick" for="user-select" aria-label="Utilisateur courant">
-      <select id="user-select" title="Utilisateur courant"></select>
-    </label>
+    <div class="user-pick" id="user-pick">
+      <span class="member-avatar" id="me-avatar" aria-hidden="true"></span>
+      <span class="me-name" id="me-name"></span>
+      <button id="btn-logout" class="btn btn-ghost btn-sm" type="button" title="Se déconnecter">Déconnexion</button>
+    </div>
     <div class="topbar-actions">
       <div class="search-wrap">
         <input id="search-input" type="search" placeholder="Rechercher (titre, description, étiquette, membre)" aria-label="Recherche">
@@ -191,6 +193,19 @@
         </form>
       </div>
     </section>
+  </div>
+
+  <div class="login-overlay" id="login-overlay" hidden>
+    <form class="login-card" id="login-form" aria-labelledby="login-title">
+      <div class="brand login-brand"><span class="brand-box" aria-hidden="true"><span class="brand-slot"></span></span><span class="brand-name" id="login-title">La Boîte</span></div>
+      <p class="login-hint">Qui êtes-vous ?</p>
+      <div class="login-members" id="login-members" role="radiogroup" aria-label="Membre"></div>
+      <label class="copy-field">Code d'accès
+        <input id="login-code" type="password" inputmode="numeric" autocomplete="current-password" required minlength="6">
+      </label>
+      <div class="login-error" id="login-error" role="alert"></div>
+      <button class="btn btn-primary" id="login-submit" type="submit">Entrer</button>
+    </form>
   </div>
 
   <div class="toast" id="toast" hidden></div>
