@@ -3,6 +3,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
 const { init, BACKGROUNDS } = require('./db');
 
@@ -21,6 +22,14 @@ if (IS_TEST) {
 }
 
 const db = init(DB_PATH);
+
+// Fichiers joints : hors de public/, jamais servis en statique
+const UPLOAD_DIR = IS_TEST ? '/tmp/la-boite-test-uploads' : path.join(__dirname, 'uploads');
+if (IS_TEST) fs.rmSync(UPLOAD_DIR, { recursive: true, force: true });
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+const MAX_UPLOAD = 10 * 1024 * 1024;
+// Types affichés en ligne (aperçu) ; tout le reste est forcé en téléchargement. Pas de SVG (scripts).
+const INLINE_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
 
 const app = express();
 app.disable('x-powered-by');
@@ -60,7 +69,9 @@ function broadcast(boardId, payload) {
 /* ----------------------------- Helpers ----------------------------- */
 
 function getBoard(id) {
-  return db.prepare('SELECT id, name, background, created_at FROM boards WHERE id = ?').get(id);
+  const b = db.prepare('SELECT id, name, background, is_template, created_at FROM boards WHERE id = ?').get(id);
+  if (b) b.is_template = !!b.is_template;
+  return b;
 }
 
 function isFiniteNumber(v) {
@@ -174,11 +185,15 @@ app.get('/api/board/:id', (req, res) => {
     SELECT COUNT(ci.id) AS total, COALESCE(SUM(ci.checked),0) AS done
     FROM checklists cl JOIN check_items ci ON ci.checklist_id = cl.id WHERE cl.card_id = ?`);
   const commentStmt = db.prepare('SELECT COUNT(*) AS n FROM comments WHERE card_id = ?');
+  const attachStmt = db.prepare('SELECT COUNT(*) AS n FROM attachments WHERE card_id = ?');
+  const voteStmt = db.prepare('SELECT member_id FROM card_votes WHERE card_id = ? ORDER BY member_id');
   for (const list of lists) {
     list.cards = cardStmt.all(list.id).map((c) => {
       c.labels = labelStmt.all(c.id);
       c.checklist = checkStmt.get(c.id);
       c.comments_count = commentStmt.get(c.id).n;
+      c.attachments_count = attachStmt.get(c.id).n;
+      c.voters = voteStmt.all(c.id).map((v) => v.member_id);
       c.members = memberStmt.all(c.id);
       c.due_complete = !!c.due_complete;
       c.archived = !!c.archived;
@@ -195,6 +210,49 @@ app.get('/api/board/:id', (req, res) => {
   res.json({ board, lists, labels, members, archived, backgrounds: BACKGROUNDS });
 });
 
+app.get('/api/boards', (_req, res) => {
+  const boards = db.prepare('SELECT id, name, background, is_template FROM boards ORDER BY is_template, id').all()
+    .map((b) => ({ ...b, is_template: !!b.is_template }));
+  res.json({ boards });
+});
+
+// Nouveau tableau depuis un tableau (typiquement un modèle) : listes, étiquettes et, au choix, cartes
+// (titre, description, couverture, étiquettes, checklists décochées). Ni commentaires, ni activité,
+// ni pièces jointes, ni votes, ni échéances.
+app.post('/api/boards/:id/copy', (req, res) => {
+  const src = getBoard(req.params.id);
+  if (!src) return notFound(res);
+  const body = req.body || {};
+  const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : `${src.name} (copie)`;
+  const keepCards = body.keep_cards !== false;
+  const id = db.transaction(() => {
+    const b = db.prepare('INSERT INTO boards (name, background) VALUES (?,?)').run(name, src.background).lastInsertRowid;
+    const labelMap = new Map();
+    for (const l of db.prepare('SELECT * FROM labels WHERE board_id = ? ORDER BY id').all(src.id)) {
+      labelMap.set(l.id, db.prepare('INSERT INTO labels (board_id, name, color) VALUES (?,?,?)').run(b, l.name, l.color).lastInsertRowid);
+    }
+    for (const l of db.prepare('SELECT * FROM lists WHERE board_id = ? ORDER BY pos').all(src.id)) {
+      const nl = db.prepare('INSERT INTO lists (board_id, name, pos, wip_limit) VALUES (?,?,?,?)')
+        .run(b, l.name, l.pos, l.wip_limit).lastInsertRowid;
+      if (!keepCards) continue;
+      for (const c of db.prepare('SELECT * FROM cards WHERE list_id = ? AND archived = 0 ORDER BY pos').all(l.id)) {
+        const nc = db.prepare('INSERT INTO cards (list_id, title, description, pos, cover, created_by) VALUES (?,?,?,?,?,?)')
+          .run(nl, c.title, c.description, c.pos, c.cover, actorId(req)).lastInsertRowid;
+        for (const cl of db.prepare('SELECT label_id FROM card_labels WHERE card_id = ?').all(c.id)) {
+          db.prepare('INSERT INTO card_labels (card_id, label_id) VALUES (?,?)').run(nc, labelMap.get(cl.label_id));
+        }
+        for (const ck of cardChecklists(c.id)) {
+          const nk = db.prepare('INSERT INTO checklists (card_id, name, pos) VALUES (?,?,?)').run(nc, ck.name, ck.pos).lastInsertRowid;
+          for (const it of ck.items) db.prepare('INSERT INTO check_items (checklist_id, name, pos) VALUES (?,?,?)').run(nk, it.name, it.pos);
+        }
+      }
+    }
+    logActivity(b, null, actorId(req), 'board_created', `a créé ce tableau à partir de « ${src.name} »`);
+    return b;
+  })();
+  res.status(201).json({ board: getBoard(id) });
+});
+
 app.post('/api/boards', (req, res) => {
   const name = req.body && typeof req.body.name === 'string' ? req.body.name.trim() : '';
   if (!name) return badReq(res, 'name requis');
@@ -206,8 +264,11 @@ app.post('/api/boards', (req, res) => {
 app.patch('/api/boards/:id', (req, res) => {
   const board = getBoard(req.params.id);
   if (!board) return notFound(res);
-  const { name, background } = req.body || {};
-  if (name === undefined && background === undefined) return badReq(res, 'aucun champ');
+  const { name, background, is_template } = req.body || {};
+  if (name === undefined && background === undefined && is_template === undefined) return badReq(res, 'aucun champ');
+  if (is_template !== undefined) {
+    db.prepare('UPDATE boards SET is_template = ? WHERE id = ?').run(is_template ? 1 : 0, board.id);
+  }
   if (name !== undefined) {
     if (typeof name !== 'string' || !name.trim()) return badReq(res, 'name requis');
     db.prepare('UPDATE boards SET name = ? WHERE id = ?').run(name.trim(), board.id);
@@ -407,7 +468,7 @@ app.get('/api/cards/:id', (req, res) => {
   if (!card) return notFound(res);
   const comments = db.prepare(`${COMMENT_SELECT} WHERE co.card_id = ? ORDER BY co.id DESC`).all(card.id);
   const activity = db.prepare(`${ACTIVITY_SELECT} WHERE a.card_id = ? ORDER BY a.id DESC LIMIT 100`).all(card.id);
-  res.json({ card, checklists: cardChecklists(card.id), comments, activity });
+  res.json({ card, checklists: cardChecklists(card.id), comments, activity, attachments: cardAttachments(card.id) });
 });
 
 /* ------------------------------- Checklists ------------------------------- */
@@ -556,6 +617,107 @@ app.delete('/api/comments/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+/* ------------------------------ Pièces jointes ----------------------------- */
+
+function getAttachment(id) {
+  return db.prepare(`
+    SELECT a.id, a.card_id, a.member_id, a.kind, a.name, a.url, a.mime, a.size, a.stored, a.created_at,
+           m.name AS member_name
+    FROM attachments a LEFT JOIN members m ON m.id = a.member_id WHERE a.id = ?`).get(id);
+}
+
+function publicAttachment(a) {
+  const { stored, ...rest } = a;
+  return { ...rest, previewable: a.kind === 'file' && INLINE_TYPES.has(a.mime) };
+}
+
+function cardAttachments(cardId) {
+  return db.prepare('SELECT id FROM attachments WHERE card_id = ? ORDER BY id DESC').all(cardId)
+    .map((r) => publicAttachment(getAttachment(r.id)));
+}
+
+// Fichier : corps brut (Content-Type du fichier) + nom dans X-File-Name (encodeURIComponent).
+// Lien : JSON { url, name? } — http(s) uniquement.
+app.post('/api/cards/:id/attachments',
+  express.raw({ type: (req) => !req.is('application/json'), limit: MAX_UPLOAD }),
+  (req, res) => {
+    const card = getCard(req.params.id);
+    if (!card) return notFound(res);
+    const author = actorId(req);
+    let id;
+    if (req.is('application/json')) {
+      const raw = typeof req.body.url === 'string' ? req.body.url.trim() : '';
+      let url;
+      try { url = new URL(raw); } catch { return badReq(res, 'url invalide'); }
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return badReq(res, 'url http(s) requise');
+      const name = cleanName(req.body.name) || url.hostname + (url.pathname === '/' ? '' : url.pathname);
+      id = db.prepare("INSERT INTO attachments (card_id, member_id, kind, name, url) VALUES (?,?,'link',?,?)")
+        .run(card.id, author, name.slice(0, 200), url.href).lastInsertRowid;
+    } else {
+      if (!Buffer.isBuffer(req.body) || !req.body.length) return badReq(res, 'fichier vide');
+      let name = '';
+      try { name = decodeURIComponent(req.get('X-File-Name') || ''); } catch { /* nom illisible */ }
+      name = path.basename(name.replace(/\\/g, '/')).trim().slice(0, 200) || 'fichier';
+      const mime = (req.get('Content-Type') || 'application/octet-stream').split(';')[0].trim().toLowerCase();
+      const stored = crypto.randomBytes(16).toString('hex');
+      fs.writeFileSync(path.join(UPLOAD_DIR, stored), req.body);
+      id = db.prepare("INSERT INTO attachments (card_id, member_id, kind, name, mime, size, stored) VALUES (?,?,'file',?,?,?,?)")
+        .run(card.id, author, name, mime, req.body.length, stored).lastInsertRowid;
+    }
+    const a = getAttachment(id);
+    const boardId = boardOfCard(card);
+    logActivity(boardId, card.id, author, 'attachment_added', `a joint « ${a.name} »`);
+    broadcast(boardId, { type: 'card', id: card.id });
+    res.status(201).json({ attachment: publicAttachment(a) });
+  });
+
+app.get('/api/attachments/:id/file', (req, res) => {
+  const a = getAttachment(req.params.id);
+  if (!a || a.kind !== 'file') return notFound(res);
+  const file = path.join(UPLOAD_DIR, a.stored);
+  if (!fs.existsSync(file)) return notFound(res);
+  const inline = INLINE_TYPES.has(a.mime) && req.query.download !== '1';
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+  res.setHeader('Content-Type', inline ? a.mime : 'application/octet-stream');
+  res.setHeader('Content-Disposition',
+    `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(a.name)}`);
+  res.setHeader('Cache-Control', 'private, max-age=3600');
+  fs.createReadStream(file).pipe(res);
+});
+
+// L'auteur ou l'administrateur (membre 1) supprime
+app.delete('/api/attachments/:id', (req, res) => {
+  const a = getAttachment(req.params.id);
+  if (!a) return notFound(res);
+  const who = actorId(req);
+  if (who !== a.member_id && who !== 1) return res.status(403).json({ error: 'forbidden' });
+  db.prepare('DELETE FROM attachments WHERE id = ?').run(a.id);
+  if (a.stored) fs.rmSync(path.join(UPLOAD_DIR, a.stored), { force: true });
+  const card = getCard(a.card_id);
+  const boardId = boardOfCard(card);
+  logActivity(boardId, card.id, who, 'attachment_removed', `a retiré « ${a.name} »`);
+  broadcast(boardId, { type: 'card', id: card.id });
+  res.json({ ok: true });
+});
+
+/* ---------------------------------- Votes ---------------------------------- */
+
+app.post('/api/cards/:id/votes', (req, res) => {
+  const card = getCard(req.params.id);
+  if (!card) return notFound(res);
+  const who = actorId(req);
+  if (!who) return badReq(res, 'membre requis (X-Member-Id)');
+  if (req.body && req.body.remove) {
+    db.prepare('DELETE FROM card_votes WHERE card_id = ? AND member_id = ?').run(card.id, who);
+  } else {
+    db.prepare('INSERT OR IGNORE INTO card_votes (card_id, member_id) VALUES (?,?)').run(card.id, who);
+  }
+  broadcast(boardOfCard(card), { type: 'card', id: card.id });
+  const voters = db.prepare('SELECT member_id FROM card_votes WHERE card_id = ? ORDER BY member_id').all(card.id).map((v) => v.member_id);
+  res.json({ voters });
+});
+
 /* ------------------------------ Copie de carte ----------------------------- */
 
 // Copie : titre, description, couverture, échéance ; options : étiquettes, membres, checklists
@@ -680,6 +842,7 @@ app.get('*', (_req, res) => res.sendFile(path.join(PUB, 'index.html')));
 // Dernier recours : erreur JSON (jamais de page HTML pour l'API)
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
+  if (err && err.type === 'entity.too.large') return res.status(413).json({ error: 'too_large' });
   console.error(err);
   res.status(500).json({ error: 'server_error' });
 });

@@ -55,6 +55,25 @@ function req(method, url, body, extraHeaders) {
   });
 }
 
+// Requête à corps brut (téléversement de fichier)
+function rawReq(method, url, buf, headers) {
+  return new Promise((resolve, reject) => {
+    const r = http.request(`${BASE}${url}`, { method, headers: { 'Content-Length': buf.length, ...headers } }, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        const body = Buffer.concat(chunks);
+        let json = null;
+        try { json = JSON.parse(body.toString('utf8')); } catch { /* binaire */ }
+        resolve({ status: res.statusCode, json, body, headers: res.headers });
+      });
+    });
+    r.on('error', reject);
+    r.write(buf);
+    r.end();
+  });
+}
+
 function waitForHealth(tries = 50) {
   return new Promise((resolve, reject) => {
     const attempt = (n) => {
@@ -369,6 +388,96 @@ let killed = false;
     const sI = await req('GET', `/api/board/1/search?q=${encodeURIComponent('Tester sur mobile')}`);
     check('21. recherche : commentaires + éléments de checklist', sC.json.results.some((c) => c.id === proto.id) &&
       sI.json.results.some((c) => c.id === proto.id), JSON.stringify({ c: sC.json.results.length, i: sI.json.results.length }));
+
+    /* ============================ v1.2.0 ============================ */
+
+    /* 22. Pièces jointes */
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+    const upImg = await rawReq('POST', `/api/cards/${proto.id}/attachments`, png,
+      { 'Content-Type': 'image/png', 'X-File-Name': encodeURIComponent('maquette écran.png'), 'X-Member-Id': '2' });
+    const html = Buffer.from('<script>alert(1)</script>');
+    const upHtml = await rawReq('POST', `/api/cards/${proto.id}/attachments`, html,
+      { 'Content-Type': 'text/html', 'X-File-Name': encodeURIComponent('../../evil.html'), 'X-Member-Id': '2' });
+    const imgId = upImg.json && upImg.json.attachment && upImg.json.attachment.id;
+    const htmlId = upHtml.json && upHtml.json.attachment && upHtml.json.attachment.id;
+    const getImg = await rawReq('GET', `/api/attachments/${imgId}/file`, Buffer.alloc(0), {});
+    const getHtml = await rawReq('GET', `/api/attachments/${htmlId}/file`, Buffer.alloc(0), {});
+    check('22a. fichier image : aperçu en ligne, octets identiques', upImg.status === 201 && upImg.json.attachment.previewable &&
+      getImg.status === 200 && getImg.headers['content-type'] === 'image/png' && getImg.body.equals(png) &&
+      getImg.headers['x-content-type-options'] === 'nosniff', `${upImg.status}/${getImg.status}/${getImg.headers['content-type']}`);
+    check('22b. HTML téléversé : forcé en téléchargement, nom assaini', upHtml.status === 201 && upHtml.json.attachment.name === 'evil.html' &&
+      getHtml.headers['content-type'] === 'application/octet-stream' && /^attachment/.test(getHtml.headers['content-disposition'] || '') &&
+      /sandbox/.test(getHtml.headers['content-security-policy'] || ''), JSON.stringify(getHtml.headers));
+    const lnk = await req('POST', `/api/cards/${proto.id}/attachments`, { url: 'https://exemple.org/cahier-des-charges' }, AS(1));
+    const badLnk = await req('POST', `/api/cards/${proto.id}/attachments`, { url: 'javascript:alert(1)' }, AS(1));
+    const big = await rawReq('POST', `/api/cards/${proto.id}/attachments`, Buffer.alloc(10 * 1024 * 1024 + 1),
+      { 'Content-Type': 'application/octet-stream', 'X-File-Name': 'gros.bin', 'X-Member-Id': '1' });
+    check('22c. lien http(s) ok, javascript: refusé, > 10 Mo → 413', lnk.status === 201 && lnk.json.attachment.kind === 'link' &&
+      badLnk.status === 400 && big.status === 413, `${lnk.status}/${badLnk.status}/${big.status}`);
+    const delOtherAtt = await req('DELETE', `/api/attachments/${htmlId}`, null, AS(3));
+    const delOwnAtt = await req('DELETE', `/api/attachments/${htmlId}`, null, AS(2));
+    const goneFile = await rawReq('GET', `/api/attachments/${htmlId}/file`, Buffer.alloc(0), {});
+    check('22d. suppression : autre membre → 403, auteur → fichier effacé', delOtherAtt.status === 403 && delOwnAtt.status === 200 &&
+      goneFile.status === 404, `${delOtherAtt.status}/${delOwnAtt.status}/${goneFile.status}`);
+    await page.waitForFunction((id) => /📎 2/.test(document.querySelector(`.list-card[data-card-id="${id}"] .badge-attach`)?.textContent || ''), String(proto.id), { timeout: 6000 });
+    await page.click(`.list-card[data-card-id="${proto.id}"]`);
+    await page.waitForSelector('#modal-attachments .attachment-thumb img', { timeout: 5000 });
+    await page.setInputFiles('#modal-attach-file', { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('bonjour') });
+    await page.waitForFunction(() => [...document.querySelectorAll('#modal-attachments .attachment-name')].some((a) => a.textContent === 'notes.txt'), null, { timeout: 6000 });
+    check('22e. UI : badge 📎, aperçu image, téléversement depuis la modale', true, '');
+
+    /* 23. Votes */
+    await page.click('#modal-vote');
+    await page.waitForFunction(() => document.querySelector('#modal-vote').classList.contains('is-on'), null, { timeout: 5000 });
+    await req('POST', `/api/cards/${proto.id}/votes`, {}, AS(2));
+    await req('POST', `/api/cards/${proto.id}/votes`, {}, AS(2));
+    const noActor = await req('POST', `/api/cards/${proto.id}/votes`, {});
+    await page.waitForFunction((id) => /👍 2/.test(document.querySelector(`.list-card[data-card-id="${id}"] .badge-votes`)?.textContent || ''), String(proto.id), { timeout: 6000 });
+    await page.click('#modal-vote');
+    await page.waitForFunction(() => !document.querySelector('#modal-vote').classList.contains('is-on'), null, { timeout: 5000 });
+    const afterVote = (await allCards()).find((c) => c.id === proto.id);
+    check('23. votes : 1 par membre, retrait, membre requis', JSON.stringify(afterVote.voters) === '[2]' && noActor.status === 400,
+      `${JSON.stringify(afterVote.voters)}/${noActor.status}`);
+    await page.click('#modal-close');
+
+    /* 24. Modèles de tableau */
+    const tpl = await req('PATCH', '/api/boards/1', { is_template: true });
+    await page.waitForFunction(() => !document.querySelector('#board-template-chip').hidden, null, { timeout: 6000 });
+    const fromTpl = await req('POST', '/api/boards/1/copy', { name: 'Sprint 12' }, AS(1));
+    const nb = fromTpl.json && fromTpl.json.board;
+    const nbFull = await req('GET', `/api/board/${nb && nb.id}`);
+    const nbCards = nbFull.json.lists.flatMap((l) => l.cards);
+    const nbProto = nbCards.find((c) => c.title === 'Cadrer le premier prototype');
+    const nbLabelIds = new Set(nbFull.json.labels.map((l) => l.id));
+    check('24a. tableau depuis modèle : listes, étiquettes remappées, checklists décochées', fromTpl.status === 201 &&
+      nb.name === 'Sprint 12' && !nb.is_template && nbFull.json.lists.length === 4 && nbFull.json.labels.length === 3 &&
+      nbProto && nbProto.labels.every((l) => nbLabelIds.has(l.id)) && nbProto.checklist.done === 0 && nbProto.checklist.total === 4 &&
+      nbProto.comments_count === 0 && nbProto.attachments_count === 0 && nbProto.voters.length === 0,
+      JSON.stringify(nbProto && { cl: nbProto.checklist, labels: nbProto.labels }));
+    const boardsList = await req('GET', '/api/boards');
+    check('24b. GET /api/boards liste les 2 tableaux (modèle signalé)', tpl.status === 200 && boardsList.json.boards.length === 2 &&
+      boardsList.json.boards.some((b) => b.id === 1 && b.is_template), JSON.stringify(boardsList.json));
+    const p2 = await context.newPage();
+    await p2.goto(`/?board=${nb.id}`, { waitUntil: 'domcontentloaded' });
+    await p2.waitForSelector('.list-card', { timeout: 10000 });
+    const p2Title = await p2.textContent('#board-title');
+    const p2TplHidden = await p2.evaluate(() => document.querySelector('#board-template-chip').hidden);
+    check('24c. UI : nouveau tableau ouvert via ?board=, sans badge Modèle', p2Title === 'Sprint 12' && p2TplHidden, `${p2Title}/${p2TplHidden}`);
+    await p2.close();
+    await req('PATCH', '/api/boards/1', { is_template: false });
+
+    /* 25. Migration : base v1.1 sans colonne is_template */
+    const Database = require('better-sqlite3');
+    const { open: openDb } = require('../db.js');
+    const migPath = '/tmp/la-boite-migration-test.db';
+    for (const sfx of ['', '-wal', '-shm']) fs.existsSync(migPath + sfx) && fs.unlinkSync(migPath + sfx);
+    const legacy = new Database(migPath);
+    legacy.exec("CREATE TABLE boards (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, background TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now'))); INSERT INTO boards (name) VALUES ('Ancien');");
+    legacy.close();
+    const migrated = openDb(migPath);
+    const migRow = migrated.prepare('SELECT name, is_template FROM boards').get();
+    migrated.close();
+    check('25. migration : colonne is_template ajoutée, données conservées', migRow.name === 'Ancien' && migRow.is_template === 0, JSON.stringify(migRow));
   } catch (e) {
     check('erreur inattendue', false, e.message || e);
   } finally {

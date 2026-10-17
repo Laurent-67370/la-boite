@@ -3,6 +3,7 @@
 
 const state = {
   boardId: new URLSearchParams(location.search).get('board') || '1',
+  boards: [],
   board: null,
   lists: [],
   labels: [],
@@ -147,6 +148,8 @@ function renderBoard() {
   const titleBtn = $('#board-title');
   if (document.activeElement !== titleBtn) titleBtn.textContent = state.board.name;
 
+  $('#board-template-chip').hidden = !state.board.is_template;
+
   // Compteur global indicatif
   const total = state.lists.reduce((n, l) => n + l.cards.length, 0);
   const wipEl = $('#board-wip');
@@ -281,6 +284,20 @@ function buildCard(card) {
     b.className = 'badge-check' + (cl.done === cl.total ? ' check-complete' : '');
     b.textContent = `☑ ${cl.done}/${cl.total}`;
     b.title = 'Éléments de checklist terminés';
+    badges.appendChild(b);
+  }
+  if (card.attachments_count) {
+    const b = document.createElement('span');
+    b.className = 'badge-attach';
+    b.textContent = `📎 ${card.attachments_count}`;
+    b.title = `${card.attachments_count} pièce${card.attachments_count > 1 ? 's' : ''} jointe${card.attachments_count > 1 ? 's' : ''}`;
+    badges.appendChild(b);
+  }
+  if (card.voters && card.voters.length) {
+    const b = document.createElement('span');
+    b.className = 'badge-votes' + (card.voters.includes(state.userId) ? ' is-mine' : '');
+    b.textContent = `👍 ${card.voters.length}`;
+    b.title = `${card.voters.length} vote${card.voters.length > 1 ? 's' : ''}`;
     badges.appendChild(b);
   }
   if (card.comments_count) {
@@ -579,6 +596,39 @@ function renderBackgrounds() {
   }
 }
 
+async function loadBoards() {
+  const res = await fetch('/api/boards');
+  if (!res.ok) return;
+  state.boards = (await res.json()).boards;
+  renderBoardsMenu();
+}
+
+function renderBoardsMenu() {
+  const ul = $('#menu-boards');
+  ul.textContent = '';
+  for (const b of state.boards) {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = `/?board=${b.id}`;
+    a.className = 'menu-board' + (String(b.id) === String(state.boardId) ? ' is-current' : '');
+    const sw = document.createElement('span');
+    sw.className = 'menu-board-swatch';
+    sw.style.background = b.background;
+    a.append(sw, document.createTextNode(b.name));
+    if (b.is_template) {
+      const chip = document.createElement('span');
+      chip.className = 'menu-board-tag';
+      chip.textContent = 'Modèle';
+      a.appendChild(chip);
+    }
+    li.appendChild(a);
+    ul.appendChild(li);
+  }
+  const isTpl = !!(state.board && state.board.is_template);
+  $('#menu-template-toggle').checked = isTpl;
+  $('#from-template-form').hidden = !isTpl;
+}
+
 async function loadBoardActivity() {
   const res = await fetch(`/api/board/${state.boardId}/activity?limit=15`);
   if (!res.ok) return;
@@ -635,6 +685,7 @@ function renderMenuPopover() {
   const total = state.lists.reduce((n, l) => n + l.cards.length, 0);
   stats.textContent = `${state.board ? state.board.name : ''} — ${state.lists.length} listes, ${total} cartes.`;
   renderBackgrounds();
+  renderBoardsMenu();
   const trash = $('#menu-trash');
   trash.textContent = '';
   if (!state.archived.length) {
@@ -698,6 +749,7 @@ async function loadModalDetail() {
   const res = await fetch(`/api/cards/${id}`);
   if (!res.ok || state.modalCardId !== id) return;
   state.modalDetail = await res.json();
+  renderAttachments();
   renderChecklists();
   renderFeed();
 }
@@ -778,10 +830,108 @@ function fillModal(card, list) {
   }
 
   $('#modal-archive').hidden = !isAdmin();
+
+  const voters = card.voters || [];
+  const voteBtn = $('#modal-vote');
+  const mine = voters.includes(state.userId);
+  voteBtn.classList.toggle('is-on', mine);
+  voteBtn.setAttribute('aria-pressed', String(mine));
+  voteBtn.textContent = mine ? `👍 Voté (${voters.length})` : `👍 Voter${voters.length ? ` (${voters.length})` : ''}`;
+  const vBox = $('#modal-voters');
+  vBox.textContent = '';
+  for (const id of voters) {
+    const m = state.members.find((x) => x.id === id);
+    if (m) vBox.appendChild(avatar(m.initials, m.color, m.name));
+  }
   const me = state.members.find((m) => m.id === state.userId);
   const av = $('#modal-comment-avatar');
   av.textContent = me ? me.initials : '?';
   av.style.background = me ? me.color : '#7b8894';
+}
+
+/* -------------------------- Modale : pièces jointes -------------------------- */
+
+function fmtSize(n) {
+  if (n < 1024) return `${n} o`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} Ko`;
+  return `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} Mo`;
+}
+
+function renderAttachments() {
+  const ul = $('#modal-attachments');
+  const detail = state.modalDetail;
+  if (!detail) return;
+  ul.textContent = '';
+  for (const a of detail.attachments || []) {
+    const li = document.createElement('li');
+    li.className = 'attachment';
+    li.dataset.attachmentId = a.id;
+    const thumb = document.createElement('a');
+    thumb.className = 'attachment-thumb';
+    thumb.target = '_blank';
+    thumb.rel = 'noopener noreferrer';
+    if (a.kind === 'link') {
+      thumb.href = a.url;
+      thumb.textContent = '🔗';
+    } else {
+      thumb.href = `/api/attachments/${a.id}/file`;
+      if (a.previewable) {
+        const img = document.createElement('img');
+        img.src = `/api/attachments/${a.id}/file`;
+        img.alt = '';
+        img.loading = 'lazy';
+        thumb.appendChild(img);
+      } else {
+        thumb.textContent = (a.name.split('.').pop() || 'fichier').slice(0, 4).toUpperCase();
+      }
+    }
+    const body = document.createElement('div');
+    body.className = 'attachment-body';
+    const link = document.createElement('a');
+    link.className = 'attachment-name';
+    link.textContent = a.name;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.href = a.kind === 'link' ? a.url : `/api/attachments/${a.id}/file?download=1`;
+    const meta = document.createElement('span');
+    meta.className = 'feed-when';
+    meta.textContent = [a.kind === 'file' ? fmtSize(a.size) : 'lien', a.member_name, fmtWhen(a.created_at)].filter(Boolean).join(' · ');
+    body.append(link, meta);
+    li.append(thumb, body);
+    if (a.member_id === state.userId || isAdmin()) {
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'check-item-del attachment-del';
+      del.title = 'Retirer la pièce jointe';
+      del.textContent = '✕';
+      del.addEventListener('click', async () => {
+        if (!confirm(`Retirer « ${a.name} » ?`)) return;
+        const res = await api('DELETE', `/api/attachments/${a.id}`);
+        if (res.ok) refreshSoon(); else toast('Suppression refusée');
+      });
+      li.appendChild(del);
+    }
+    ul.appendChild(li);
+  }
+}
+
+async function uploadAttachment(file) {
+  if (!state.modalCardId || !file) return;
+  const hint = $('#attach-hint');
+  if (file.size > 10 * 1024 * 1024) { toast('Fichier trop lourd (10 Mo max)'); return; }
+  hint.textContent = `Envoi de « ${file.name} »…`;
+  const res = await fetch(`/api/cards/${state.modalCardId}/attachments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': file.type || 'application/octet-stream',
+      'X-File-Name': encodeURIComponent(file.name),
+      'X-Member-Id': String(state.userId)
+    },
+    body: file
+  });
+  hint.textContent = '';
+  if (res.ok) refreshSoon();
+  else toast(res.status === 413 ? 'Fichier trop lourd (10 Mo max)' : 'Envoi impossible');
 }
 
 /* ---------------------------- Modale : checklists ---------------------------- */
@@ -1066,6 +1216,7 @@ function renderNotifications() {
       if (!n.read) await api('POST', `/api/members/${state.userId}/notifications/read`, { ids: [n.id] });
       $('#popover-notif').hidden = true;
       if (n.card_id && String(n.board_id) === String(state.boardId)) openModal(n.card_id);
+      else if (n.card_id) { location.href = `/?board=${n.board_id}&card=${n.card_id}`; return; }
       loadNotifications();
     });
     li.appendChild(body);
@@ -1177,7 +1328,7 @@ function wireStaticUI() {
     popN.hidden = true;
     renderMenuPopover();
     popM.hidden = !popM.hidden;
-    if (!popM.hidden) loadBoardActivity();
+    if (!popM.hidden) { loadBoardActivity(); loadBoards(); }
   });
   $('#btn-notif').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1251,6 +1402,62 @@ function wireStaticUI() {
     const res = await fetch(`/api/cards/${id}`, { method: 'DELETE', headers: jsonHeaders() });
     closeModal();
     if (res.ok) { toast('Carte mise à la corbeille'); refreshSoon(); }
+  });
+
+  // Votes
+  $('#modal-vote').addEventListener('click', async () => {
+    const f = findCard(state.modalCardId);
+    if (!f) return;
+    const mine = (f.card.voters || []).includes(state.userId);
+    const res = await api('POST', `/api/cards/${f.card.id}/votes`, mine ? { remove: true } : {});
+    if (res.ok) refreshSoon();
+  });
+
+  // Pièces jointes : sélecteur, glisser-déposer d'un fichier sur la modale, lien
+  const fileInput = $('#modal-attach-file');
+  fileInput.addEventListener('change', async () => {
+    for (const f of fileInput.files) await uploadAttachment(f);
+    fileInput.value = '';
+  });
+  const modal = $('#card-modal');
+  modal.addEventListener('dragover', (e) => {
+    if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); modal.classList.add('file-over'); }
+  });
+  modal.addEventListener('dragleave', (e) => { if (!modal.contains(e.relatedTarget)) modal.classList.remove('file-over'); });
+  modal.addEventListener('drop', async (e) => {
+    if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+    e.preventDefault();
+    modal.classList.remove('file-over');
+    for (const f of e.dataTransfer.files) await uploadAttachment(f);
+  });
+  $('#modal-attach-link').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = $('#modal-attach-url');
+    const url = input.value.trim();
+    if (!url || !state.modalCardId) return;
+    const res = await api('POST', `/api/cards/${state.modalCardId}/attachments`, { url });
+    if (res.ok) { input.value = ''; refreshSoon(); } else toast('Lien refusé (http ou https uniquement)');
+  });
+
+  // Tableaux et modèles
+  $('#new-board-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = $('#new-board-name').value.trim();
+    if (!name) return;
+    const res = await api('POST', '/api/boards', { name });
+    if (res.ok) location.href = `/?board=${(await res.json()).board.id}`;
+  });
+  $('#menu-template-toggle').addEventListener('change', async (e) => {
+    await api('PATCH', `/api/boards/${state.boardId}`, { is_template: e.target.checked });
+    await refresh();
+    loadBoards();
+  });
+  $('#from-template-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = $('#from-template-name').value.trim();
+    const res = await api('POST', `/api/boards/${state.boardId}/copy`, { name });
+    if (res.ok) location.href = `/?board=${(await res.json()).board.id}`;
+    else toast('Création impossible');
   });
 
   // Checklists
@@ -1389,6 +1596,9 @@ async function boot() {
   connectSSE();
   wireStaticUI();
   loadNotifications();
+  loadBoards();
+  const cardParam = Number(new URLSearchParams(location.search).get('card'));
+  if (cardParam) openModal(cardParam);
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
