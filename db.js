@@ -255,6 +255,10 @@ function migrate(db) {
     db.exec('ALTER TABLE members ADD COLUMN code_hash TEXT');
     db.exec('ALTER TABLE members ADD COLUMN code_salt TEXT');
   }
+  const cardCols = db.prepare('PRAGMA table_info(cards)').all().map((c) => c.name);
+  if (!cardCols.includes('start_at')) {
+    db.exec('ALTER TABLE cards ADD COLUMN start_at TEXT');
+  }
   const listCols = db.prepare('PRAGMA table_info(lists)').all().map((c) => c.name);
   if (!listCols.includes('archived')) {
     db.exec('ALTER TABLE lists ADD COLUMN archived INTEGER NOT NULL DEFAULT 0');

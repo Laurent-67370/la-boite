@@ -143,7 +143,8 @@ function countClass(card) { return null; }
 
 function renderBoard() {
   if (!state.board) return;
-  const keepScroll = scroller.scrollLeft;
+  // C'est le canevas qui défile horizontalement (pas le conteneur des listes)
+  const keepScroll = canvas.scrollLeft;
 
   // Dégradé de fond du tableau (stocké en db)
   canvas.style.background = state.board.background;
@@ -160,6 +161,11 @@ function renderBoard() {
   wipEl.hidden = false;
   wipEl.textContent = `${state.lists.length} liste${state.lists.length > 1 ? 's' : ''} · ${total} carte${total > 1 ? 's' : ''}`;
 
+  // Saisie en cours dans un composer : on la retrouve après la reconstruction
+  const active = document.activeElement;
+  const focusedComposer = active && active.closest('.composer') && active.closest('.list-wrapper')
+    ? { listId: Number(active.closest('.list-wrapper').dataset.listId), sel: active.selectionStart } : null;
+
   scroller.textContent = '';
   for (const list of state.lists) scroller.appendChild(buildList(list));
 
@@ -167,15 +173,22 @@ function renderBoard() {
   addBtn.hidden = false;
   if (addBtn.parentElement !== scroller) scroller.appendChild(addBtn);
 
-  // Rejoue le brouillon du composer s'il était ouvert
+  // Rejoue les composers ouverts, même vides (sinon un événement temps réel arrivé juste après
+  // l'ouverture refermait le formulaire et la frappe suivante était perdue)
   for (const [listId, draft] of Object.entries(state.composerDraft)) {
-    if (!draft || !draft.value) continue;
+    if (!draft) continue;
     openComposer(Number(listId), draft.top);
-    const ta = $('.composer textarea');
-    if (ta) ta.value = draft.value;
+    const ta = $(`.list-wrapper[data-list-id="${listId}"] .composer textarea`);
+    if (!ta) continue;
+    ta.value = draft.value;
+    state.composerDraft[listId].value = draft.value; // openComposer repart d'un brouillon vide
+    if (focusedComposer && focusedComposer.listId === Number(listId)) {
+      ta.focus();
+      try { ta.setSelectionRange(focusedComposer.sel, focusedComposer.sel); } catch { /* noop */ }
+    }
   }
 
-  scroller.scrollLeft = keepScroll;
+  canvas.scrollLeft = keepScroll;
 }
 
 function buildList(list) {
@@ -293,9 +306,17 @@ function buildCard(card) {
     due.className = 'badge-due';
     if (isDueComplete(card)) due.classList.add('due-complete');
     else if (isPast(card.due_at)) due.classList.add('due-past');
-    due.textContent = '📅 ' + fmtDate(card.due_at);
-    due.title = 'Échéance : ' + card.due_at + (isDueComplete(card) ? ' (terminée)' : '');
+    // Avec une date de début : « 📅 3 oct. → 15 janv. »
+    due.textContent = '📅 ' + (card.start_at ? fmtDate(card.start_at + 'T00:00') + ' → ' : '') + fmtDate(card.due_at);
+    due.title = (card.start_at ? 'Début : ' + card.start_at + ' · ' : '') +
+      'Échéance : ' + card.due_at + (isDueComplete(card) ? ' (terminée)' : '');
     badges.appendChild(due);
+  } else if (card.start_at) {
+    const start = document.createElement('span');
+    start.className = 'badge-due badge-start';
+    start.textContent = '▶ ' + fmtDate(card.start_at + 'T00:00');
+    start.title = 'Début : ' + card.start_at;
+    badges.appendChild(start);
   }
   const cl = card.checklist;
   if (cl && cl.total) {
@@ -355,6 +376,7 @@ function buildCard(card) {
     el.classList.add('dragging');
   });
   el.addEventListener('dragend', () => { el.classList.remove('dragging'); state.dragCardId = null; clearSlots(); });
+  wireTouchDrag(el, card);
 
   el.addEventListener('click', () => openModal(card.id));
   return el;
@@ -502,24 +524,128 @@ function wireCardDropZone(cardsBox) {
     clearSlots();
     const cardId = Number(e.dataTransfer.getData('text/plain')) || state.dragCardId;
     state.dragCardId = null;
-    const index = slotIndex(cardsBox, e.clientY);
-    const children = [...cardsBox.querySelectorAll('.list-card')].filter((c) => Number(c.dataset.cardId) !== cardId);
-    let pos;
-    if (!children.length) pos = 100;
-    else if (index <= 0) pos = Number(children[0].dataset.pos) / 2;
-    else if (index >= children.length) pos = Number(children[children.length - 1].dataset.pos) + 50;
-    else pos = (Number(children[index - 1].dataset.pos) + Number(children[index].dataset.pos)) / 2;
-    await fetch(`/api/cards/${cardId}/move`, {
-      method: 'POST',
-      headers: jsonHeaders(),
-      body: JSON.stringify({ list_id: Number(cardsBox.dataset.listId), pos })
-    });
-    refreshSoon();
+    await moveCardTo(cardId, cardsBox, e.clientY);
   });
 }
 
+// Position de dépôt commune à la souris et au tactile. L'index est calculé SANS la carte déplacée
+// (sinon, en descendant une carte dans sa propre liste, elle atterrissait une place trop bas).
+async function moveCardTo(cardId, cardsBox, clientY) {
+  const children = [...cardsBox.querySelectorAll('.list-card')].filter((c) => Number(c.dataset.cardId) !== cardId);
+  let index = 0;
+  for (const c of children) {
+    const r = c.getBoundingClientRect();
+    if (clientY > r.top + r.height / 2) index++;
+    else break;
+  }
+  let pos;
+  if (!children.length) pos = 100;
+  else if (index <= 0) pos = Number(children[0].dataset.pos) / 2;
+  else if (index >= children.length) pos = Number(children[children.length - 1].dataset.pos) + 50;
+  else pos = (Number(children[index - 1].dataset.pos) + Number(children[index].dataset.pos)) / 2;
+  await fetch(`/api/cards/${cardId}/move`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ list_id: Number(cardsBox.dataset.listId), pos })
+  });
+  refreshSoon();
+}
+
+/* Glisser-déposer au doigt : le DnD HTML5 ne fonctionne pas au tactile. Appui long (350 ms) sur une
+   carte → une copie suit le doigt, la fente d'insertion s'affiche, lâcher = déplacer. Un mouvement
+   avant la fin de l'appui long reste un défilement normal. */
+function wireTouchDrag(el, card) {
+  let timer = null;
+  let start = null;
+  let dragging = false;
+  let ghost = null;
+  let target = null;
+  let lastY = 0;
+  let finger = null; // dernière position du doigt
+  let offset = { x: 0, y: 0 };
+
+  const cleanup = () => {
+    clearTimeout(timer);
+    timer = null;
+    start = null;
+    if (ghost) ghost.remove();
+    ghost = null;
+    el.classList.remove('dragging');
+    document.body.classList.remove('touch-dragging');
+    clearSlots();
+    dragging = false;
+    target = null;
+    state.dragCardId = null;
+  };
+
+  const locate = () => {
+    const under = document.elementFromPoint(finger.x, finger.y);
+    const box = under && under.closest('.list-cards');
+    if (box) { showSlot(box, finger.y); target = box; lastY = finger.y; } else { clearSlots(); target = null; }
+  };
+
+  const place = (t) => {
+    finger = { x: t.clientX, y: t.clientY };
+    ghost.style.transform = `translate(${finger.x - offset.x}px, ${finger.y - offset.y}px) rotate(2deg)`;
+    locate();
+  };
+
+  // Défilement horizontal tant que le doigt reste près d'un bord (même immobile : plus de touchmove)
+  const edgeScroll = () => {
+    if (!dragging) return;
+    const before = canvas.scrollLeft;
+    if (finger.x < 40) canvas.scrollLeft -= 12;
+    else if (finger.x > window.innerWidth - 40) canvas.scrollLeft += 12;
+    if (canvas.scrollLeft !== before) locate();
+    requestAnimationFrame(edgeScroll);
+  };
+
+  const begin = (t) => {
+    dragging = true;
+    state.dragCardId = card.id;
+    const r = el.getBoundingClientRect();
+    offset = { x: t.clientX - r.left, y: t.clientY - r.top };
+    ghost = el.cloneNode(true);
+    ghost.classList.add('touch-ghost');
+    ghost.style.width = `${r.width}px`;
+    document.body.appendChild(ghost);
+    el.classList.add('dragging');
+    document.body.classList.add('touch-dragging');
+    if (navigator.vibrate) navigator.vibrate(15);
+    place(t);
+    requestAnimationFrame(edgeScroll);
+  };
+
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    start = { x: t.clientX, y: t.clientY, t };
+    timer = setTimeout(() => begin(start.t), 350);
+  }, { passive: true });
+  el.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    if (!dragging) {
+      if (start && Math.hypot(t.clientX - start.x, t.clientY - start.y) > 10) cleanup(); // c'est un défilement
+      else if (start) start.t = t;
+      return;
+    }
+    e.preventDefault(); // pas de défilement pendant le déplacement
+    place(t);
+  }, { passive: false });
+  el.addEventListener('touchend', async (e) => {
+    if (!dragging) { cleanup(); return; }
+    e.preventDefault(); // pas de « clic » qui ouvrirait la carte
+    const box = target;
+    const y = lastY;
+    cleanup();
+    if (box) await moveCardTo(card.id, box, y);
+  });
+  el.addEventListener('touchcancel', cleanup);
+  el.addEventListener('contextmenu', (e) => { if (timer || dragging) e.preventDefault(); });
+}
+
 function slotIndex(cardsBox, y) {
-  const children = [...cardsBox.querySelectorAll('.list-card')];
+  const children = [...cardsBox.querySelectorAll('.list-card:not(.dragging)')];
   let i = 0;
   for (const c of children) {
     const r = c.getBoundingClientRect();
@@ -535,7 +661,7 @@ function showSlot(cardsBox, y) {
   const slot = document.createElement('div');
   slot.className = 'drop-slot';
   const i = slotIndex(cardsBox, y);
-  const children = [...cardsBox.querySelectorAll('.list-card')];
+  const children = [...cardsBox.querySelectorAll('.list-card:not(.dragging)')];
   if (i >= children.length) cardsBox.appendChild(slot);
   else cardsBox.insertBefore(slot, children[i]);
 }
@@ -810,6 +936,7 @@ function fillModal(card, list) {
   const desc = $('#modal-desc');
   if (document.activeElement !== desc) desc.value = card.description;
   $('#modal-due').value = card.due_at ? String(card.due_at).slice(0, 16) : '';
+  $('#modal-start').value = card.start_at || '';
   const doneBtn = $('#modal-due-complete');
   doneBtn.classList.toggle('is-on', !!card.due_complete);
 
@@ -1421,6 +1548,7 @@ function wireStaticUI() {
   $('#modal-close').addEventListener('click', closeModal);
   $('#modal-overlay').addEventListener('click', (e) => { if (e.target === $('#modal-overlay')) closeModal(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#modal-overlay').hidden) closeModal(); });
+  wireShortcuts();
 
   const modalTitle = $('#modal-title');
   const saveTitle = debounce(() => {
@@ -1441,9 +1569,21 @@ function wireStaticUI() {
   }, 650);
   modalDesc.addEventListener('input', saveDesc);
 
+  // Dates : un refus du serveur (début après l'échéance…) est affiché et le champ revient à sa valeur
+  const patchDate = async (body) => {
+    const res = await patchCardInModal(body);
+    if (res && !res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.error ? err.error.charAt(0).toUpperCase() + err.error.slice(1) : 'Date refusée');
+      const f = findCard(state.modalCardId);
+      if (f) fillModal(f.card, f.list);
+    }
+  };
+  $('#modal-start').addEventListener('change', (e) => patchDate({ start_at: e.target.value || null }));
+  $('#modal-start-clear').addEventListener('click', () => patchDate({ start_at: null }));
   $('#modal-due').addEventListener('change', (e) => {
     const v = e.target.value;
-    patchCardInModal({ due_at: v || null });
+    patchDate({ due_at: v || null });
   });
   $('#modal-due-complete').addEventListener('click', () => {
     const f = findCard(state.modalCardId);
@@ -1572,6 +1712,54 @@ function wireStaticUI() {
     toast('Carte copiée');
     await refresh();
     openModal(card.id);
+  });
+}
+
+/* --------------------------- Raccourcis clavier --------------------------- */
+
+function isTyping(el) {
+  return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+}
+
+function wireShortcuts() {
+  const help = $('#shortcuts-overlay');
+  const closeHelp = () => { help.hidden = true; };
+  $('#shortcuts-close').addEventListener('click', closeHelp);
+  help.addEventListener('click', (e) => { if (e.target === help) closeHelp(); });
+
+  // Liste survolée : cible de « n »
+  scroller.addEventListener('mouseover', (e) => {
+    const w = e.target.closest('.list-wrapper');
+    if (w) state.hoverListId = Number(w.dataset.listId);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (!help.hidden) { closeHelp(); return; }
+      for (const id of ['#popover-filter', '#popover-menu', '#popover-notif', '#popover-account']) $(id).hidden = true;
+      return;
+    }
+    if (!state.me || e.ctrlKey || e.metaKey || e.altKey || isTyping(document.activeElement)) return;
+    if (!$('#modal-overlay').hidden || !$('#login-overlay').hidden) return;
+    if (e.key === '?') { e.preventDefault(); help.hidden = !help.hidden; return; }
+    if (!help.hidden) return;
+    if (e.key === '/') {
+      e.preventDefault();
+      $('#search-input').focus();
+    } else if (e.key === 'n') {
+      const open = state.lists.filter((l) => !l.collapsed);
+      const list = open.find((l) => l.id === state.hoverListId) || open[0];
+      if (!list) return;
+      e.preventDefault();
+      const wrap = $(`.list-wrapper[data-list-id="${list.id}"]`);
+      if (wrap) wrap.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      openComposer(list.id, false);
+      const ta = wrap && wrap.querySelector('.composer textarea');
+      if (ta) ta.focus();
+    } else if (e.key === 'f') {
+      e.preventDefault();
+      $('#btn-filter').click();
+    }
   });
 }
 

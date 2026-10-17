@@ -4,7 +4,7 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 
 ![La Boîte — vue mobile](docs/capture-mobile.png)
 
-## Fonctionnalités (v1.4.1)
+## Fonctionnalités (v1.5.0)
 
 - **Board** : listes avec compte de cartes et **jeton de limite WIP** (`2/10` — vert, orange, rouge selon le seuil), repli d'une liste (⤢)
 - **Cartes** : titre, description (badge 📝), **couverture colorée**, **échéance** (badge orange/rouge si passée, vert si terminée ✓), **étiquettes** (chips colorées, nom au survol), **membres** (initiales colorées)
@@ -13,7 +13,9 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 - **Fonds du tableau** (préréglages maison) et **copie de carte** (liste cible, checklists / étiquettes / membres au choix)
 - **Pièces jointes** (fichiers ≤ 10 Mo avec aperçu des images, liens), **votes** 👍, **tableaux modèles** et navigation entre plusieurs tableaux
 - **Accès par code** : chaque membre se connecte avec son code personnel et peut le changer depuis l'application (clic sur son nom) ; session par cookie `HttpOnly` (30 jours), aucune donnée ni API accessible sans session
-- **Glisser-déposer** : cartes entre listes, réordonnancement de cartes ET de listes (positions réelles)
+- **Glisser-déposer** : cartes entre listes, réordonnancement de cartes ET de listes (positions réelles) ; au doigt sur mobile par appui long
+- **Dates** : début et échéance (badge `📅 20 oct. → 5 nov.`)
+- **Raccourcis clavier** : `/` recherche, `n` nouvelle carte, `f` filtre, `?` aide, `Échap` ferme
 - **Recherche / filtre** : titre, description, étiquette, membre, commentaire, élément de checklist, échéance
 - **Corbeille** : archivage + restauration des cartes et des listes (une liste revient avec toutes ses cartes)
 - **Temps réel** : SSE (`/api/board/:id/events`) — une carte créée sur un onglet apparaît instantanément sur les autres, sans rechargement
@@ -44,7 +46,7 @@ Variables :
 ## Tests
 
 ```bash
-npm test     # 72 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
+npm test     # 78 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
 CHROMIUM_PATH=/chemin/vers/chrome npm test   # si le Chromium de Playwright n'est pas installé
 node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page (instance de test jetable)
 ```
@@ -60,7 +62,7 @@ La suite tourne aussi sur GitHub Actions à chaque PR et sur `main` (`.github/wo
 | `GET /api/boards` · `POST /api/boards` · `PATCH /api/boards/:id` | lister / créer / renommer, changer le fond (`background` ∈ préréglages), marquer modèle (`is_template`) |
 | `POST /api/boards/:id/copy` | nouveau tableau depuis un modèle |
 | `POST /api/lists` · `PATCH/DELETE /api/lists/:id` · `POST /api/lists/:id/unarchive` | listes (nom, position, WIP, repli) ; `DELETE` = mise à la corbeille, cartes conservées |
-| `POST /api/cards` · `PATCH/DELETE /api/cards/:id` | cartes (titre, description, échéance, couverture…) |
+| `POST /api/cards` · `PATCH/DELETE /api/cards/:id` | cartes (titre, description, début `start_at` AAAA-MM-JJ, échéance, couverture…) |
 | `POST /api/cards/:id/move` | déplacement / réordonnancement |
 | `POST /api/cards/:id/labels` · `/members` | rattacher / retirer |
 | `POST /api/cards/:id/unarchive` | restaurer depuis la corbeille |

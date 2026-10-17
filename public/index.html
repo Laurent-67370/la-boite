@@ -130,8 +130,14 @@
           <div class="save-hint" id="desc-hint"></div>
         </div>
         <div class="modal-block">
-          <div class="modal-heading">Échéance</div>
+          <div class="modal-heading">Dates</div>
           <div class="due-row">
+            <label class="date-label" for="modal-start">Début</label>
+            <input id="modal-start" type="date" aria-label="Date de début">
+            <button id="modal-start-clear" class="btn btn-ghost-dark" type="button" title="Effacer la date de début">✕</button>
+          </div>
+          <div class="due-row">
+            <label class="date-label" for="modal-due">Échéance</label>
             <input id="modal-due" type="datetime-local" aria-label="Échéance">
             <button id="modal-due-complete" class="btn btn-light" type="button">terminée ✓</button>
             <button id="modal-due-clear" class="btn btn-ghost-dark" type="button" title="Effacer l’échéance">✕</button>
@@ -223,6 +229,23 @@
       <div class="login-error" id="login-error" role="alert"></div>
       <button class="btn btn-primary" id="login-submit" type="submit">Entrer</button>
     </form>
+  </div>
+
+  <div class="modal-overlay shortcuts-overlay" id="shortcuts-overlay" hidden>
+    <section class="card-modal shortcuts-card" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
+      <div class="modal-top">
+        <h2 class="shortcuts-title" id="shortcuts-title">Raccourcis clavier</h2>
+        <button class="modal-close" id="shortcuts-close" type="button" title="Fermer">✕</button>
+      </div>
+      <dl class="shortcuts-list">
+        <dt><kbd>/</kbd></dt><dd>Rechercher</dd>
+        <dt><kbd>n</kbd></dt><dd>Nouvelle carte (dans la liste survolée, sinon la première)</dd>
+        <dt><kbd>f</kbd></dt><dd>Ouvrir / fermer le filtre</dd>
+        <dt><kbd>?</kbd></dt><dd>Afficher cette aide</dd>
+        <dt><kbd>Échap</kbd></dt><dd>Fermer la carte, un panneau ou cette aide</dd>
+      </dl>
+      <p class="menu-foot">Sur mobile : appui long sur une carte pour la déplacer.</p>
+    </section>
   </div>
 
   <div class="toast" id="toast" hidden></div>

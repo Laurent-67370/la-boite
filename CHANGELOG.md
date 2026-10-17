@@ -1,5 +1,18 @@
 # Changelog — La Boîte
 
+## v1.5.0 — 2026-10-17
+
+**Confort au quotidien**
+- **Date de début** sur les cartes (jour, `AAAA-MM-JJ`) : bloc « Dates » dans la modale, badge `📅 20 oct. → 5 nov.` (ou `▶ 20 oct.` sans échéance), refus si le début suit l'échéance, journalisée, conservée à la copie. Choix maison (les preuves REA n'en montraient pas)
+- **Raccourcis clavier** : `/` recherche, `n` nouvelle carte (liste survolée, sinon la première), `f` filtre, `?` aide, `Échap` ferme ; inactifs pendant une saisie
+- **Glisser-déposer au doigt** : appui long (350 ms) sur une carte → la carte suit le doigt, fente d'insertion, défilement automatique aux bords (même doigt immobile), lâcher = déplacer ; un glissement rapide reste un défilement ; aucune ouverture de carte au lâcher
+
+**Corrections**
+- Glisser une carte vers le bas **dans sa propre liste** la posait une place trop bas (l'index d'insertion comptait la carte déplacée) : `O1` lâchée entre `O2` et `O3` donnait `O2, O3, O1` ; position commune souris/tactile corrigée
+- Un événement temps réel arrivé juste après l'ouverture du formulaire « Ajouter une carte » (bouton ou `n`) le refermait si rien n'était encore tapé, et retirait le focus sinon : la saisie suivante était perdue. Les formulaires ouverts sont désormais restaurés, vides compris, avec le focus et le curseur
+- Service worker : cache `la-boite-v6`
+- Tests : 78/78 (dates, raccourcis, ordre dans une liste, composer pendant un événement, tactile réel via CDP, garde-fou de défilement)
+
 ## v1.4.1 — 2026-10-17
 
 **Copie hors du VPS, chiffrée**

@@ -795,6 +795,155 @@ let killed = false;
           JSON.stringify({ remote, encrypted, decFiles, badKey }));
       }
     }
+
+    /* ============================ v1.5.0 ============================ */
+
+    /* 38. Date de début */
+    const dCard = (await req('POST', '/api/cards', { list_id: aFaire.id, title: 'Carte datée' })).json.card;
+    const badStart = await req('PATCH', `/api/cards/${dCard.id}`, { start_at: '20/10/2026' });
+    const okDates = await req('PATCH', `/api/cards/${dCard.id}`, { start_at: '2030-03-02', due_at: '2030-03-15T18:00' });
+    const inverted = await req('PATCH', `/api/cards/${dCard.id}`, { start_at: '2030-03-20' });
+    const dueBefore = await req('PATCH', `/api/cards/${dCard.id}`, { due_at: '2030-03-01T09:00' });
+    const sameDay = await req('PATCH', `/api/cards/${dCard.id}`, { start_at: '2030-03-15' });
+    const dDet = await req('GET', `/api/cards/${dCard.id}`);
+    await page.waitForFunction((id) => /→/.test(document.querySelector(`.list-card[data-card-id="${id}"] .badge-due`)?.textContent || ''), String(dCard.id), { timeout: 6000 });
+    const dBadge = await page.textContent(`.list-card[data-card-id="${dCard.id}"] .badge-due`);
+    const dCopy = await req('POST', `/api/cards/${dCard.id}/copy`, {});
+    check('38. date de début : format AAAA-MM-JJ, jamais après l’échéance, badge « début → échéance », copiée, journalisée',
+      badStart.status === 400 && okDates.status === 200 && inverted.status === 400 && dueBefore.status === 400 &&
+      sameDay.status === 200 && dDet.json.card.start_at === '2030-03-15' && /15 mars.*→.*15 mars/.test(dBadge) &&
+      dCopy.json.card.start_at === '2030-03-15' && dDet.json.activity.some((a) => a.kind === 'start_changed'),
+      JSON.stringify({ s: [badStart.status, okDates.status, inverted.status, dueBefore.status, sameDay.status], dBadge }));
+
+    /* 39. Raccourcis clavier */
+    await page.mouse.click(5, 700);
+    await page.keyboard.press('/');
+    const searchFocused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'search-input');
+    await page.keyboard.type('n');
+    const noComposerWhileTyping = await page.evaluate(() => !document.querySelector('.composer'));
+    await page.fill('#search-input', '');
+    await page.evaluate(() => document.activeElement.blur());
+    await page.hover(`.list-wrapper[data-list-id="${enCours.id}"] .list-header-row`);
+    await page.keyboard.press('n');
+    await page.waitForSelector(`.list-wrapper[data-list-id="${enCours.id}"] .composer textarea`, { timeout: 3000 });
+    const composerFocused = await page.evaluate(() => document.activeElement && document.activeElement.closest('.composer') !== null);
+    await page.keyboard.type('Carte au clavier');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => [...document.querySelectorAll('.list-card-title')].some((t) => t.textContent === 'Carte au clavier'), null, { timeout: 6000 });
+    const kbCard = (await allCards()).find((c) => c.title === 'Carte au clavier');
+    await page.mouse.click(5, 700);
+    await page.keyboard.press('?');
+    const helpShown = await page.isVisible('#shortcuts-overlay');
+    await page.keyboard.press('Escape');
+    const helpHidden = await page.evaluate(() => document.querySelector('#shortcuts-overlay').hidden);
+    await page.keyboard.press('f');
+    const filterOpen = await page.evaluate(() => !document.querySelector('#popover-filter').hidden);
+    await page.keyboard.press('Escape');
+    const filterClosed = await page.evaluate(() => document.querySelector('#popover-filter').hidden);
+    check('39. raccourcis : / recherche, n carte dans la liste survolée, ? aide, f filtre, Échap ferme, rien pendant la saisie',
+      searchFocused && noComposerWhileTyping && composerFocused && kbCard && kbCard.list_id === enCours.id &&
+      helpShown && helpHidden && filterOpen && filterClosed,
+      JSON.stringify({ searchFocused, noComposerWhileTyping, composerFocused, kb: kbCard && kbCard.list_id, helpShown, helpHidden, filterOpen, filterClosed }));
+
+    /* 39b. Composer ouvert (vide) puis événement temps réel avant la frappe : le formulaire et le focus restent */
+    await page.mouse.click(5, 700);
+    await page.hover(`.list-wrapper[data-list-id="${aValider.id}"] .list-header-row`);
+    await page.keyboard.press('n');
+    await page.waitForSelector(`.list-wrapper[data-list-id="${aValider.id}"] .composer textarea`, { timeout: 3000 });
+    await req('POST', '/api/cards', { list_id: aFaire.id, title: 'Événement concurrent' });
+    await page.waitForFunction(() => [...document.querySelectorAll('.list-card-title')].some((t) => t.textContent === 'Événement concurrent'), null, { timeout: 6000 });
+    await page.keyboard.type('Début fin');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => [...document.querySelectorAll('.list-card-title')].some((t) => t.textContent === 'Début fin'), null, { timeout: 6000 });
+    const survivor = (await allCards()).find((c) => c.title === 'Début fin');
+    check('39b. saisie de carte non perdue quand un événement temps réel arrive pendant la frappe',
+      !!survivor && survivor.list_id === aValider.id, JSON.stringify(survivor));
+
+    /* 40. Réordonner dans la même liste : la carte atterrit là où on la lâche */
+    const ordre = (await req('POST', '/api/lists', { board_id: 1, name: 'Ordre' })).json.list;
+    const oIds = [];
+    for (const t of ['O1', 'O2', 'O3']) oIds.push((await req('POST', '/api/cards', { list_id: ordre.id, title: t })).json.card.id);
+    await page.waitForFunction((id) => document.querySelectorAll(`.list-cards[data-list-id="${id}"] .list-card`).length === 3, ordre.id, { timeout: 6000 });
+    await page.evaluate(({ cardId, listId }) => {
+      const card = document.querySelector(`.list-card[data-card-id="${cardId}"]`);
+      const box = document.querySelector(`.list-cards[data-list-id="${listId}"]`);
+      const cards = box.querySelectorAll('.list-card');
+      const r2 = cards[1].getBoundingClientRect();
+      const r3 = cards[2].getBoundingClientRect();
+      const y = (r2.bottom + r3.top) / 2; // entre O2 et O3
+      const dt = new DataTransfer();
+      dt.setData('text/plain', String(cardId));
+      card.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+      box.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt, clientX: r2.left + 10, clientY: y }));
+      box.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt, clientX: r2.left + 10, clientY: y }));
+    }, { cardId: oIds[0], listId: ordre.id });
+    await page.waitForFunction(({ id, first }) => document.querySelector(`.list-cards[data-list-id="${id}"] .list-card`)?.dataset.cardId !== String(first),
+      { id: ordre.id, first: oIds[0] }, { timeout: 6000 });
+    const order = (await req('GET', '/api/board/1')).json.lists.find((l) => l.id === ordre.id).cards.map((c) => c.title);
+    check('40. glisser O1 entre O2 et O3 → ordre O2, O1, O3', order.join(',') === 'O2,O1,O3', order.join(','));
+
+    /* 41. Glisser-déposer au doigt (vrais événements tactiles via CDP) */
+    const mob = await browser.newContext({ baseURL: BASE, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, locale: 'fr-FR' });
+    const [cName, cValue] = SESSIONS[1].split('=');
+    await mob.addCookies([{ name: cName, value: cValue, url: BASE }]);
+    const mp = await mob.newPage();
+    mp.on('pageerror', (e) => console.log('[pageerror mobile]', e.message));
+    await mp.goto('/', { waitUntil: 'domcontentloaded' });
+    await mp.waitForSelector('.list-card', { timeout: 10000 });
+    const cdp = await mob.newCDPSession(mp);
+    const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
+    const tCard = oIds[2]; // O3, dans la liste « Ordre »
+    await mp.evaluate((id) => document.querySelector(`.list-card[data-card-id="${id}"]`).scrollIntoView({ inline: 'start' }), tCard);
+    const from = await mp.evaluate((id) => { const r = document.querySelector(`.list-card[data-card-id="${id}"]`).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, tCard);
+    // a) mouvement rapide = défilement, pas de déplacement
+    await touch('touchStart', from.x, from.y);
+    await touch('touchMove', from.x, from.y + 60);
+    await touch('touchEnd');
+    await mp.waitForTimeout(500);
+    const stillThere = (await allCards()).find((c) => c.id === tCard).list_id === ordre.id;
+    // b) appui long puis glisser jusqu'à la liste précédente (« Éphémère » ou la dernière avant « Ordre »)
+    const targetList = await mp.evaluate((id) => {
+      const wraps = [...document.querySelectorAll('.list-wrapper')];
+      const i = wraps.findIndex((w) => Number(w.dataset.listId) === id);
+      return Number(wraps[i - 1].dataset.listId);
+    }, ordre.id);
+    await touch('touchStart', from.x, from.y);
+    await mp.waitForTimeout(450);
+    const ghostShown = await mp.evaluate(() => !!document.querySelector('.touch-ghost'));
+    // avance vers la gauche par pas : le bord gauche fait défiler le tableau jusqu'à la liste cible
+    let pt = { ...from };
+    for (let k = 0; k < 60; k++) {
+      const tgt = await mp.evaluate((id) => {
+        const b = document.querySelector(`.list-cards[data-list-id="${id}"]`);
+        if (!b) return null;
+        const r = b.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + 10, visible: r.left >= 0 && r.right <= innerWidth };
+      }, targetList);
+      if (tgt && tgt.visible) { pt = { x: tgt.x, y: tgt.y }; await touch('touchMove', pt.x, pt.y); break; }
+      pt = { x: 20, y: from.y };
+      await touch('touchMove', pt.x, pt.y);
+      await mp.waitForTimeout(30);
+    }
+    await mp.waitForTimeout(100);
+    const slotShown = await mp.evaluate(() => !!document.querySelector('.drop-slot'));
+    await touch('touchEnd');
+    await mp.waitForFunction(({ id, list }) => !!document.querySelector(`.list-cards[data-list-id="${list}"] .list-card[data-card-id="${id}"]`),
+      { id: tCard, list: targetList }, { timeout: 6000 });
+    const movedTouch = (await allCards()).find((c) => c.id === tCard);
+    const modalOpened = await mp.evaluate(() => !document.querySelector('#modal-overlay').hidden);
+    check('41. tactile : glissement rapide = défilement ; appui long → fantôme, fente, dépôt dans l’autre liste, sans ouvrir la carte',
+      stillThere && ghostShown && slotShown && movedTouch.list_id === targetList && !modalOpened &&
+      !(await mp.evaluate(() => !!document.querySelector('.touch-ghost'))),
+      JSON.stringify({ stillThere, ghostShown, slotShown, list: movedTouch.list_id, targetList, modalOpened }));
+    /* 42. Un rafraîchissement temps réel garde la position de défilement horizontal */
+    await mp.evaluate(() => { document.querySelector('#board-canvas').scrollLeft = 600; });
+    const before42 = await mp.evaluate(() => document.querySelector('#board-canvas').scrollLeft);
+    await req('POST', '/api/cards', { list_id: aFaire.id, title: 'Déclencheur SSE' });
+    await mp.waitForFunction(() => [...document.querySelectorAll('.list-card-title')].some((t) => t.textContent === 'Déclencheur SSE'), null, { timeout: 6000 });
+    const after42 = await mp.evaluate(() => document.querySelector('#board-canvas').scrollLeft);
+    check('42. garde-fou : un rafraîchissement temps réel conserve le défilement horizontal', before42 > 0 && after42 === before42,
+      `${before42}/${after42}`);
+    await mob.close();
   } catch (e) {
     check('erreur inattendue', false, e.message || e);
   } finally {
