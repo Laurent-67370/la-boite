@@ -1,5 +1,14 @@
 # Changelog — La Boîte
 
+## v1.4.0 — 2026-10-17
+
+**Sauvegardes** (il n'y en avait aucune)
+- `scripts/backup.cjs` : copie **cohérente à chaud** de la base par l'API de sauvegarde en ligne de SQLite (inclut ce qui est encore dans le WAL ; jamais de `cp data.db`), contrôle `integrity_check` de la copie, copie de `uploads/`, `manifest.json` (date, version, SHA-256 de la base, nombre de cartes/fichiers). Écriture dans un dossier temporaire puis renommage : une sauvegarde visible est toujours complète
+- Rotation : suppression des sauvegardes de plus de 14 jours (`--keep-days`), jamais la plus récente ; nettoyage des sauvegardes interrompues
+- `scripts/restore.cjs` : vérifie SHA-256 et intégrité **avant** de toucher à quoi que ce soit, exige `--yes`, met l'existant de côté (`*.avant-restauration-…`) au lieu de l'effacer
+- `deploy/la-boite-backup.service` + `.timer` : modèles systemd (horaire, `Persistent=true`, `UMask=0077`, priorité basse)
+- Tests : 71/71 (sauvegarde pendant une écriture en WAL, rotation, restauration, sauvegarde altérée refusée)
+
 ## v1.3.1 — 2026-10-17
 
 - **Changer mon code** depuis l'application (clic sur son nom) : code actuel exigé, nouveau code confirmé (6 caractères minimum) ; les autres sessions du membre sont fermées, la session courante reste ouverte. API `POST /api/auth/code` `{current, next}`

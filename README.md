@@ -4,7 +4,7 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 
 ![La Boîte — vue mobile](docs/capture-mobile.png)
 
-## Fonctionnalités (v1.3.1)
+## Fonctionnalités (v1.4.0)
 
 - **Board** : listes avec compte de cartes et **jeton de limite WIP** (`2/10` — vert, orange, rouge selon le seuil), repli d'une liste (⤢)
 - **Cartes** : titre, description (badge 📝), **couverture colorée**, **échéance** (badge orange/rouge si passée, vert si terminée ✓), **étiquettes** (chips colorées, nom au survol), **membres** (initiales colorées)
@@ -44,7 +44,7 @@ Variables :
 ## Tests
 
 ```bash
-npm test     # 67 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
+npm test     # 71 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
 CHROMIUM_PATH=/chemin/vers/chrome npm test   # si le Chromium de Playwright n'est pas installé
 node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page (instance de test jetable)
 ```
@@ -87,6 +87,21 @@ Connexion : `GET /api/auth/members` (noms pour l'écran de connexion), `POST /ap
 - nginx : vhost `trello.lhusser.fr` (proxy + `proxy_buffering off` pour le SSE + `no-cache` sur `sw.js`) ; transmettre `X-Forwarded-Proto $scheme` (cookie `Secure`) et `X-Forwarded-For $proxy_add_x_forwarded_for` (sinon le blocage ne se fait que par membre : toutes les requêtes semblent venir de 127.0.0.1)
 - HTTPS : Let's Encrypt (certbot, renouvellement automatique)
 - Carte sur le portail des apps : terminal.lhusser.fr
+
+## Sauvegardes
+
+```bash
+node scripts/backup.cjs                       # → $LA_BOITE_BACKUP_DIR (défaut backups/), rotation 14 jours
+node scripts/backup.cjs --dest /var/backups/la-boite --keep-days 30
+systemctl stop la-boite
+node scripts/restore.cjs /var/backups/la-boite/la-boite-20261017T210000000Z --yes
+systemctl start la-boite
+```
+
+- Chaque sauvegarde = `data.db` (copie cohérente par l'API SQLite, même service actif), `uploads/`, `manifest.json`
+- Automatisation : `deploy/la-boite-backup.service` + `.timer` (horaire) — voir l'en-tête du fichier pour l'installation
+- Les sauvegardes contiennent les codes **hachés** et les sessions : dossier en `0700`, à garder hors du web ; copier aussi ailleurs que sur le VPS (une sauvegarde sur le même disque ne protège pas d'une panne disque)
+- La restauration vérifie l'empreinte et l'intégrité avant toute écriture et conserve l'ancien état (`*.avant-restauration-…`)
 
 ## Historique
 

@@ -1,0 +1,17 @@
+# Sauvegarde de La Boîte (base SQLite + fichiers joints) — lancé par la-boite-backup.timer.
+# Installation : cp deploy/la-boite-backup.* /etc/systemd/system/ && systemctl daemon-reload
+#                systemctl enable --now la-boite-backup.timer
+# Adapter User/Group (même compte que la-boite.service), le chemin de node et LA_BOITE_BACKUP_DIR.
+[Unit]
+Description=Sauvegarde de La Boîte
+After=la-boite.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/la-boite
+Environment=LA_BOITE_BACKUP_DIR=/var/backups/la-boite
+Environment=LA_BOITE_BACKUP_KEEP_DAYS=14
+ExecStart=/usr/bin/node scripts/backup.cjs
+Nice=10
+IOSchedulingClass=idle
+UMask=0077
