@@ -94,6 +94,11 @@ function boardOfList(listId) {
   return db.prepare('SELECT board_id FROM lists WHERE id = ?').get(listId).board_id;
 }
 
+// Liste active (non archivée) : seule cible valable pour créer, déplacer ou copier une carte
+function getActiveList(id) {
+  return db.prepare('SELECT * FROM lists WHERE id = ? AND archived = 0').get(id);
+}
+
 function boardOfCard(card) {
   return boardOfList(card.list_id);
 }
@@ -169,7 +174,7 @@ app.get('/api/board/:id', (req, res) => {
   const board = getBoard(req.params.id);
   if (!board) return notFound(res);
   const lists = db
-    .prepare('SELECT id, board_id, name, pos, wip_limit, collapsed FROM lists WHERE board_id = ? ORDER BY pos')
+    .prepare('SELECT id, board_id, name, pos, wip_limit, collapsed FROM lists WHERE board_id = ? AND archived = 0 ORDER BY pos')
     .all(board.id);
   const labelStmt = db.prepare(`
     SELECT l.id, l.name, l.color FROM card_labels cl JOIN labels l ON l.id = cl.label_id
@@ -206,8 +211,11 @@ app.get('/api/board/:id', (req, res) => {
   const archived = db.prepare(`
     SELECT c.id, c.list_id, c.title, c.archived FROM cards c
     JOIN lists l ON l.id = c.list_id
-    WHERE l.board_id = ? AND c.archived = 1 ORDER BY c.id DESC`).all(board.id);
-  res.json({ board, lists, labels, members, archived, backgrounds: BACKGROUNDS });
+    WHERE l.board_id = ? AND c.archived = 1 AND l.archived = 0 ORDER BY c.id DESC`).all(board.id);
+  const archivedLists = db.prepare(`
+    SELECT l.id, l.name, (SELECT COUNT(*) FROM cards c WHERE c.list_id = l.id AND c.archived = 0) AS cards
+    FROM lists l WHERE l.board_id = ? AND l.archived = 1 ORDER BY l.id DESC`).all(board.id);
+  res.json({ board, lists, labels, members, archived, archived_lists: archivedLists, backgrounds: BACKGROUNDS });
 });
 
 app.get('/api/boards', (_req, res) => {
@@ -231,7 +239,7 @@ app.post('/api/boards/:id/copy', (req, res) => {
     for (const l of db.prepare('SELECT * FROM labels WHERE board_id = ? ORDER BY id').all(src.id)) {
       labelMap.set(l.id, db.prepare('INSERT INTO labels (board_id, name, color) VALUES (?,?,?)').run(b, l.name, l.color).lastInsertRowid);
     }
-    for (const l of db.prepare('SELECT * FROM lists WHERE board_id = ? ORDER BY pos').all(src.id)) {
+    for (const l of db.prepare('SELECT * FROM lists WHERE board_id = ? AND archived = 0 ORDER BY pos').all(src.id)) {
       const nl = db.prepare('INSERT INTO lists (board_id, name, pos, wip_limit) VALUES (?,?,?,?)')
         .run(b, l.name, l.pos, l.wip_limit).lastInsertRowid;
       if (!keepCards) continue;
@@ -314,18 +322,29 @@ app.patch('/api/lists/:id', (req, res) => {
   res.json({ list: db.prepare('SELECT * FROM lists WHERE id = ?').get(list.id) });
 });
 
+// Suppression = archivage de la liste : ses cartes restent intactes et reviennent avec elle.
+// (Un vrai DELETE détruisait les cartes par cascade de clé étrangère.)
 app.delete('/api/lists/:id', (req, res) => {
-  const list = db.prepare('SELECT * FROM lists WHERE id = ?').get(req.params.id);
+  const list = getActiveList(req.params.id);
   if (!list) return notFound(res);
-  db.prepare('UPDATE cards SET archived = 1 WHERE list_id = ?').run(list.id);
-  db.prepare('DELETE FROM lists WHERE id = ?').run(list.id);
+  db.prepare('UPDATE lists SET archived = 1 WHERE id = ?').run(list.id);
+  logActivity(list.board_id, null, actorId(req), 'list_archived', `a mis la liste « ${list.name} » à la corbeille`);
   broadcast(list.board_id, { type: 'list', id: list.id });
   res.json({ ok: true });
 });
 
+app.post('/api/lists/:id/unarchive', (req, res) => {
+  const list = db.prepare('SELECT * FROM lists WHERE id = ?').get(req.params.id);
+  if (!list) return notFound(res);
+  db.prepare('UPDATE lists SET archived = 0 WHERE id = ?').run(list.id);
+  logActivity(list.board_id, null, actorId(req), 'list_unarchived', `a restauré la liste « ${list.name} »`);
+  broadcast(list.board_id, { type: 'list', id: list.id });
+  res.json({ list: db.prepare('SELECT * FROM lists WHERE id = ?').get(list.id) });
+});
+
 app.post('/api/cards', (req, res) => {
   const { list_id, title, created_by } = req.body || {};
-  const list = db.prepare('SELECT * FROM lists WHERE id = ?').get(Number(list_id));
+  const list = getActiveList(Number(list_id));
   if (!list) return notFound(res);
   if (typeof title !== 'string' || !title.trim()) return badReq(res, 'title requis');
   const max = db.prepare('SELECT COALESCE(MAX(pos),0) AS m FROM cards WHERE list_id = ? AND archived = 0').get(list.id).m;
@@ -397,6 +416,8 @@ app.post('/api/cards/:id/unarchive', (req, res) => {
   const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(req.params.id);
   if (!card) return notFound(res);
   db.prepare('UPDATE cards SET archived = 0 WHERE id = ?').run(card.id);
+  // Restaurer une carte d'une liste archivée restaure aussi la liste, sinon la carte resterait invisible
+  db.prepare('UPDATE lists SET archived = 0 WHERE id = ?').run(card.list_id);
   const boardId = boardOfCard(card);
   logActivity(boardId, card.id, actorId(req), 'card_unarchived', 'a restauré cette carte');
   broadcast(boardId, { type: 'card', id: card.id });
@@ -407,7 +428,7 @@ app.post('/api/cards/:id/move', (req, res) => {
   const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(req.params.id);
   if (!card) return notFound(res);
   const body = req.body || {};
-  const target = db.prepare('SELECT * FROM lists WHERE id = ?').get(Number(body.list_id));
+  const target = getActiveList(Number(body.list_id));
   if (!target) return notFound(res);
   const pos = isFiniteNumber(Number(body.pos)) ? Number(body.pos) : null;
   if (pos === null) return badReq(res, 'pos requis');
@@ -725,7 +746,7 @@ app.post('/api/cards/:id/copy', (req, res) => {
   const src = getCard(req.params.id);
   if (!src) return notFound(res);
   const body = req.body || {};
-  const target = db.prepare('SELECT * FROM lists WHERE id = ?').get(body.list_id == null ? src.list_id : Number(body.list_id));
+  const target = getActiveList(body.list_id == null ? src.list_id : Number(body.list_id));
   if (!target) return notFound(res);
   const title = cleanName(body.title) || src.title;
   const keep = { labels: true, members: true, checklists: true, ...(body.keep || {}) };
@@ -811,7 +832,7 @@ app.get('/api/board/:id/search', (req, res) => {
     LEFT JOIN labels la ON la.id = cl.label_id
     LEFT JOIN card_members cm ON cm.card_id = c.id
     LEFT JOIN members me ON me.id = cm.member_id
-    WHERE l.board_id = ? AND c.archived = 0
+    WHERE l.board_id = ? AND c.archived = 0 AND l.archived = 0
       AND (c.title LIKE ? OR c.description LIKE ? OR la.name LIKE ? OR me.name LIKE ? OR me.initials LIKE ?
         OR EXISTS (SELECT 1 FROM comments co WHERE co.card_id = c.id AND co.text LIKE ?)
         OR EXISTS (SELECT 1 FROM checklists ck JOIN check_items ci ON ci.checklist_id = ck.id

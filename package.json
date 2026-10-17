@@ -1,6 +1,6 @@
 {
   "name": "la-boite",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "La Boîte — tableau kanban (vanilla JS + Express + better-sqlite3 + PWA)",
   "main": "server.js",
