@@ -1,0 +1,11 @@
+# Sauvegarde horaire ; Persistent=true rattrape une exécution manquée (serveur éteint).
+[Unit]
+Description=Sauvegarde horaire de La Boîte
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=120
+Persistent=true
+
+[Install]
+WantedBy=timers.target

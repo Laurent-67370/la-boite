@@ -685,6 +685,76 @@ let killed = false;
     check('35. UI « Changer mon code » : confirmation vérifiée, ancienne session fermée, la page reste connectée',
       old3.status === 401 && new3.status === 200 && stillIn === 200, `${old3.status}/${new3.status}/${stillIn}`);
     await ctx3.close();
+
+    /* ============================ v1.4.0 : sauvegardes ============================ */
+    {
+      const { execFileSync: run } = require('child_process');
+      const T = '/tmp/la-boite-backup-test';
+      fs.rmSync(T, { recursive: true, force: true });
+      fs.mkdirSync(path.join(T, 'uploads'), { recursive: true });
+      const bdb = path.join(T, 'data.db');
+      require('../db.js').init(bdb).close();
+      fs.writeFileSync(path.join(T, 'uploads', 'a1'), Buffer.from('premier fichier'));
+      fs.writeFileSync(path.join(T, 'uploads', 'b2'), Buffer.alloc(4096, 7));
+      // Écriture laissée dans le WAL (connexion ouverte, pas de checkpoint) : la sauvegarde doit la contenir
+      const w = openDb(bdb);
+      w.pragma('wal_autocheckpoint = 0');
+      w.prepare("INSERT INTO cards (list_id, title, pos) VALUES (1, 'Écrite pendant WAL', 999)").run();
+      const walSize = fs.statSync(bdb + '-wal').size;
+      const script = (n) => path.join(__dirname, '..', 'scripts', n);
+      const out1 = run(process.execPath, [script('backup.cjs'), '--db', bdb, '--uploads', path.join(T, 'uploads'), '--dest', path.join(T, 'backups')]).toString();
+      const dirs1 = fs.readdirSync(path.join(T, 'backups')).filter((n) => n.startsWith('la-boite-'));
+      const bdir = path.join(T, 'backups', dirs1[0]);
+      const man = JSON.parse(fs.readFileSync(path.join(bdir, 'manifest.json'), 'utf8'));
+      const bcopy = new Database(path.join(bdir, 'data.db'), { readonly: true });
+      const walCard = bcopy.prepare("SELECT COUNT(*) AS n FROM cards WHERE title = 'Écrite pendant WAL'").get().n;
+      bcopy.close();
+      check('36a. sauvegarde à chaud : écriture encore dans le WAL incluse, intégrité ok, fichiers copiés',
+        walSize > 0 && dirs1.length === 1 && walCard === 1 && man.integrity === 'ok' && man.uploads.files === 2 &&
+        man.uploads.bytes === 15 + 4096 && fs.readFileSync(path.join(bdir, 'uploads', 'b2')).equals(Buffer.alloc(4096, 7)),
+        `${walSize}/${dirs1.length}/${walCard}/${out1.trim()}`);
+      w.close();
+
+      // Rotation : vieille sauvegarde et reste interrompu supprimés, récentes conservées
+      fs.mkdirSync(path.join(T, 'backups', 'la-boite-20200101T000000Z'));
+      fs.mkdirSync(path.join(T, 'backups', '.tmp-la-boite-x-1'));
+      fs.mkdirSync(path.join(T, 'backups', 'sans-rapport'));
+      run(process.execPath, [script('backup.cjs'), '--db', bdb, '--uploads', path.join(T, 'uploads'), '--dest', path.join(T, 'backups'), '--keep-days', '14']);
+      const dirs2 = fs.readdirSync(path.join(T, 'backups')).sort();
+      check('36b. rotation 14 j : ancienne et temporaire supprimées, 2 récentes + dossier étranger gardés',
+        dirs2.length === 3 && !dirs2.includes('la-boite-20200101T000000Z') && !dirs2.some((n) => n.startsWith('.tmp-')) &&
+        dirs2.includes('sans-rapport'), JSON.stringify(dirs2));
+
+      // Restauration
+      const rdb = path.join(T, 'restaure', 'data.db');
+      const rup = path.join(T, 'restaure', 'uploads');
+      let refused = false;
+      try { run(process.execPath, [script('restore.cjs'), bdir, '--db', rdb, '--uploads', rup], { stdio: 'pipe' }); } catch { refused = true; }
+      const untouched = !fs.existsSync(rdb);
+      fs.mkdirSync(rup, { recursive: true });
+      fs.writeFileSync(rup + '/ancien', 'x');
+      fs.writeFileSync(rdb, 'ancienne base');
+      run(process.execPath, [script('restore.cjs'), bdir, '--db', rdb, '--uploads', rup, '--yes'], { stdio: 'pipe' });
+      const rcopy = new Database(rdb, { readonly: true });
+      const rCard = rcopy.prepare("SELECT COUNT(*) AS n FROM cards WHERE title = 'Écrite pendant WAL'").get().n;
+      rcopy.close();
+      const kept = fs.readdirSync(path.join(T, 'restaure')).filter((n) => n.includes('avant-restauration'));
+      check('36c. restauration : --yes exigé, contenu identique, ancien état mis de côté (jamais effacé)',
+        refused && untouched && rCard === 1 && fs.readFileSync(path.join(rup, 'a1'), 'utf8') === 'premier fichier' &&
+        kept.length === 2 && !fs.existsSync(path.join(rup, 'ancien')), JSON.stringify({ refused, untouched, rCard, kept }));
+
+      // Sauvegarde altérée → refus
+      const bad = path.join(T, 'alteree');
+      fs.cpSync(bdir, bad, { recursive: true });
+      const buf = fs.readFileSync(path.join(bad, 'data.db'));
+      buf[buf.length - 10] ^= 0xff;
+      fs.writeFileSync(path.join(bad, 'data.db'), buf);
+      let tamperRefused = false;
+      try { run(process.execPath, [script('restore.cjs'), bad, '--db', path.join(T, 'x.db'), '--uploads', path.join(T, 'xu'), '--yes'], { stdio: 'pipe' }); }
+      catch (e) { tamperRefused = /SHA-256/.test(String(e.stderr)); }
+      check('36d. sauvegarde altérée (SHA-256 ≠ manifeste) → restauration refusée', tamperRefused && !fs.existsSync(path.join(T, 'x.db')),
+        String(tamperRefused));
+    }
   } catch (e) {
     check('erreur inattendue', false, e.message || e);
   } finally {
