@@ -117,6 +117,13 @@ CREATE TABLE IF NOT EXISTS card_votes (
   member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
   PRIMARY KEY (card_id, member_id)
 );
+-- Sessions : seul le hash SHA-256 du jeton (cookie HttpOnly) est conservé
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY,
+  member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  expires_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_attachments_card ON attachments(card_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_member ON notifications(member_id, read, id);
 CREATE INDEX IF NOT EXISTS idx_checklists_card ON checklists(card_id);
@@ -242,6 +249,11 @@ function migrate(db) {
   const boardCols = db.prepare('PRAGMA table_info(boards)').all().map((c) => c.name);
   if (!boardCols.includes('is_template')) {
     db.exec('ALTER TABLE boards ADD COLUMN is_template INTEGER NOT NULL DEFAULT 0');
+  }
+  const memberCols = db.prepare('PRAGMA table_info(members)').all().map((c) => c.name);
+  if (!memberCols.includes('code_hash')) {
+    db.exec('ALTER TABLE members ADD COLUMN code_hash TEXT');
+    db.exec('ALTER TABLE members ADD COLUMN code_salt TEXT');
   }
   const listCols = db.prepare('PRAGMA table_info(lists)').all().map((c) => c.name);
   if (!listCols.includes('archived')) {

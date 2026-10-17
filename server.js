@@ -6,6 +6,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 const { init, BACKGROUNDS } = require('./db');
+const auth = require('./auth');
 
 const PORT = Number(process.env.PORT || 3230);
 const IS_TEST = process.env.SF_TRELLIS_TEST === '1';
@@ -28,12 +29,81 @@ const UPLOAD_DIR = IS_TEST ? '/tmp/la-boite-test-uploads' : path.join(__dirname,
 if (IS_TEST) fs.rmSync(UPLOAD_DIR, { recursive: true, force: true });
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 const MAX_UPLOAD = 10 * 1024 * 1024;
+// Quota total des fichiers joints (Mo), pour qu'un compte ne puisse pas remplir le disque
+const UPLOAD_QUOTA = Number(process.env.LA_BOITE_UPLOAD_QUOTA_MB || 500) * 1024 * 1024;
 // Types affichés en ligne (aperçu) ; tout le reste est forcé en téléchargement. Pas de SVG (scripts).
 const INLINE_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
 
+/* ------------------------------ Codes d'accès ------------------------------ */
+
+// Amorçage optionnel des codes : LA_BOITE_INITIAL_CODES="1:code,2:code" (membres sans code seulement).
+// En production, préférer scripts/set-code.cjs.
+if (process.env.LA_BOITE_INITIAL_CODES) {
+  for (const pair of process.env.LA_BOITE_INITIAL_CODES.split(',')) {
+    const [id, code] = pair.split(':');
+    const m = db.prepare('SELECT id, code_hash FROM members WHERE id = ?').get(Number(id));
+    if (m && !m.code_hash && auth.validCode(code)) {
+      const { salt, hash } = auth.hashCode(code);
+      db.prepare('UPDATE members SET code_hash = ?, code_salt = ? WHERE id = ?').run(hash, salt, m.id);
+    }
+  }
+}
+db.prepare("DELETE FROM sessions WHERE expires_at < strftime('%Y-%m-%dT%H:%M:%fZ','now')").run();
+
+const SESSION_COOKIE = 'lb_session';
+const SESSION_DAYS = 30;
+const ADMIN_ID = 1;
+
+// Anti-force brute : 5 échecs par membre ou 20 par IP en 15 min → blocage jusqu'à la fin de la fenêtre
+const FAIL_WINDOW = 15 * 60 * 1000;
+const failures = new Map(); // clé -> { n, until }
+function tooManyFailures(key, max) {
+  const f = failures.get(key);
+  return !!f && f.until > Date.now() && f.n >= max;
+}
+function recordFailure(key) {
+  const now = Date.now();
+  const f = failures.get(key);
+  if (!f || f.until <= now) failures.set(key, { n: 1, until: now + FAIL_WINDOW });
+  else f.n += 1;
+}
+
+function parseCookies(req) {
+  const out = {};
+  for (const part of (req.get('Cookie') || '').split(';')) {
+    const i = part.indexOf('=');
+    if (i > 0) out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+  }
+  return out;
+}
+
+function sessionMember(req) {
+  const token = parseCookies(req)[SESSION_COOKIE];
+  if (!token) return null;
+  return db.prepare(`
+    SELECT m.id, m.name, m.initials, m.color FROM sessions s JOIN members m ON m.id = s.member_id
+    WHERE s.token_hash = ? AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ','now')`).get(auth.tokenHash(token)) || null;
+}
+
+function setSessionCookie(req, res, token, maxAgeSec) {
+  const parts = [`${SESSION_COOKIE}=${token}`, 'Path=/', 'HttpOnly', 'SameSite=Lax', `Max-Age=${maxAgeSec}`];
+  if (req.secure) parts.push('Secure');
+  res.setHeader('Set-Cookie', parts.join('; '));
+}
+
 const app = express();
 app.disable('x-powered-by');
+app.set('trust proxy', 'loopback'); // nginx en frontal : X-Forwarded-Proto/For fiables uniquement depuis localhost
 app.use(express.json());
+
+// Anti-CSRF (en plus de SameSite=Lax) : toute requête qui modifie doit porter l'en-tête maison
+// X-Requested-With: la-boite. Un autre site ne peut pas l'ajouter sans autorisation CORS (jamais donnée),
+// et le contrôle ne dépend pas des en-têtes Host/X-Forwarded-* transmis par nginx.
+app.use('/api', (req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD') return next();
+  if (req.get('X-Requested-With') !== 'la-boite') return res.status(403).json({ error: 'csrf' });
+  next();
+});
 
 /* ------------------------------- SSE ------------------------------- */
 
@@ -103,12 +173,17 @@ function boardOfCard(card) {
   return boardOfList(card.list_id);
 }
 
-// Auteur de l'action : en-tête X-Member-Id (sélecteur d'utilisateur côté client), sinon inconnu
+// Auteur de l'action : le membre de la session (jamais un en-tête ou un champ envoyé par le client)
 function actorId(req) {
-  const raw = req.get('X-Member-Id') || (req.body && req.body.member_id);
-  const id = Number(raw);
-  if (!Number.isInteger(id)) return null;
-  return db.prepare('SELECT id FROM members WHERE id = ?').get(id) ? id : null;
+  return req.member ? req.member.id : null;
+}
+
+function isAdminReq(req) {
+  return actorId(req) === ADMIN_ID;
+}
+
+function forbidden(res) {
+  return res.status(403).json({ error: 'forbidden' });
 }
 
 function logActivity(boardId, cardId, memberId, kind, text) {
@@ -168,6 +243,56 @@ const CARD_FIELDS_OK = new Set(['title', 'description', 'due_at', 'due_complete'
 /* -------------------------------- API ------------------------------- */
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+/* ------------------------------ Authentification ---------------------------- */
+
+// Liste pour l'écran de connexion : noms et initiales seulement
+app.get('/api/auth/members', (_req, res) => {
+  res.json({ members: db.prepare('SELECT id, name, initials, color FROM members ORDER BY id').all() });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { member_id, code } = req.body || {};
+  const id = Number(member_id);
+  // Sans X-Forwarded-For transmis par nginx, toutes les requêtes semblent venir de 127.0.0.1 :
+  // on ne limite alors que par membre, pour ne pas bloquer tout le monde à la fois.
+  const loopback = /^(::1|127\.|::ffff:127\.)/.test(req.ip || '');
+  const ipKey = loopback ? null : `ip:${req.ip}`;
+  const memberKey = `m:${id}`;
+  if ((ipKey && tooManyFailures(ipKey, 20)) || tooManyFailures(memberKey, 5)) {
+    return res.status(429).json({ error: 'too_many_attempts' });
+  }
+  const m = Number.isInteger(id) ? db.prepare('SELECT id, code_hash, code_salt FROM members WHERE id = ?').get(id) : null;
+  const ok = typeof code === 'string' && auth.verifyCode(code, m && m.code_salt, m && m.code_hash);
+  if (!m || !ok) {
+    if (ipKey) recordFailure(ipKey);
+    recordFailure(memberKey);
+    return res.status(401).json({ error: 'bad_credentials' });
+  }
+  failures.delete(memberKey);
+  const token = auth.newToken();
+  const expires = new Date(Date.now() + SESSION_DAYS * 86400 * 1000).toISOString();
+  db.prepare('INSERT INTO sessions (token_hash, member_id, expires_at) VALUES (?,?,?)').run(auth.tokenHash(token), m.id, expires);
+  setSessionCookie(req, res, token, SESSION_DAYS * 86400);
+  res.json({ member: db.prepare('SELECT id, name, initials, color FROM members WHERE id = ?').get(m.id) });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  const token = parseCookies(req)[SESSION_COOKIE];
+  if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(auth.tokenHash(token));
+  setSessionCookie(req, res, '', 0);
+  res.json({ ok: true });
+});
+
+// Tout le reste de l'API exige une session valide
+app.use('/api', (req, res, next) => {
+  const member = sessionMember(req);
+  if (!member) return res.status(401).json({ error: 'auth_required' });
+  req.member = member;
+  next();
+});
+
+app.get('/api/auth/me', (req, res) => res.json({ member: req.member }));
 
 // Tableau complet : board + listes (chacune avec ses cartes actives) + labels + membres + corbeille
 app.get('/api/board/:id', (req, res) => {
@@ -327,6 +452,7 @@ app.patch('/api/lists/:id', (req, res) => {
 app.delete('/api/lists/:id', (req, res) => {
   const list = getActiveList(req.params.id);
   if (!list) return notFound(res);
+  if (!isAdminReq(req)) return forbidden(res);
   db.prepare('UPDATE lists SET archived = 1 WHERE id = ?').run(list.id);
   logActivity(list.board_id, null, actorId(req), 'list_archived', `a mis la liste « ${list.name} » à la corbeille`);
   broadcast(list.board_id, { type: 'list', id: list.id });
@@ -343,16 +469,16 @@ app.post('/api/lists/:id/unarchive', (req, res) => {
 });
 
 app.post('/api/cards', (req, res) => {
-  const { list_id, title, created_by } = req.body || {};
+  const { list_id, title } = req.body || {};
   const list = getActiveList(Number(list_id));
   if (!list) return notFound(res);
   if (typeof title !== 'string' || !title.trim()) return badReq(res, 'title requis');
   const max = db.prepare('SELECT COALESCE(MAX(pos),0) AS m FROM cards WHERE list_id = ? AND archived = 0').get(list.id).m;
   const pos = 'pos' in req.body && isFiniteNumber(Number(req.body.pos)) ? Number(req.body.pos) : max + 100;
   const r = db.prepare('INSERT INTO cards (list_id, title, pos, created_by) VALUES (?,?,?,?)').run(
-    list.id, title.trim(), pos, created_by == null ? null : Number(created_by)
+    list.id, title.trim(), pos, actorId(req)
   );
-  logActivity(list.board_id, r.lastInsertRowid, actorId(req) ?? (created_by == null ? null : Number(created_by)),
+  logActivity(list.board_id, r.lastInsertRowid, actorId(req),
     'card_created', `a ajouté cette carte à « ${list.name} »`);
   broadcast(list.board_id, { type: 'card', id: r.lastInsertRowid });
   res.status(201).json({ card: db.prepare('SELECT * FROM cards WHERE id = ?').get(r.lastInsertRowid) });
@@ -405,6 +531,7 @@ app.patch('/api/cards/:id', (req, res) => {
 app.delete('/api/cards/:id', (req, res) => {
   const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(req.params.id);
   if (!card) return notFound(res);
+  if (!isAdminReq(req)) return forbidden(res);
   db.prepare('UPDATE cards SET archived = 1 WHERE id = ?').run(card.id);
   const boardId = boardOfCard(card);
   logActivity(boardId, card.id, actorId(req), 'card_archived', 'a mis cette carte à la corbeille');
@@ -632,7 +759,7 @@ app.delete('/api/comments/:id', (req, res) => {
   const co = getComment(req.params.id);
   if (!co) return notFound(res);
   const who = actorId(req);
-  if (who !== co.member_id && who !== 1) return res.status(403).json({ error: 'forbidden' });
+  if (who !== co.member_id && who !== ADMIN_ID) return forbidden(res);
   db.prepare('DELETE FROM comments WHERE id = ?').run(co.id);
   broadcast(boardOfCard(getCard(co.card_id)), { type: 'card', id: co.card_id });
   res.json({ ok: true });
@@ -676,6 +803,8 @@ app.post('/api/cards/:id/attachments',
         .run(card.id, author, name.slice(0, 200), url.href).lastInsertRowid;
     } else {
       if (!Buffer.isBuffer(req.body) || !req.body.length) return badReq(res, 'fichier vide');
+      const used = db.prepare("SELECT COALESCE(SUM(size),0) AS n FROM attachments WHERE kind = 'file'").get().n;
+      if (used + req.body.length > UPLOAD_QUOTA) return res.status(507).json({ error: 'quota_exceeded' });
       let name = '';
       try { name = decodeURIComponent(req.get('X-File-Name') || ''); } catch { /* nom illisible */ }
       name = path.basename(name.replace(/\\/g, '/')).trim().slice(0, 200) || 'fichier';
@@ -712,7 +841,7 @@ app.delete('/api/attachments/:id', (req, res) => {
   const a = getAttachment(req.params.id);
   if (!a) return notFound(res);
   const who = actorId(req);
-  if (who !== a.member_id && who !== 1) return res.status(403).json({ error: 'forbidden' });
+  if (who !== a.member_id && who !== ADMIN_ID) return forbidden(res);
   db.prepare('DELETE FROM attachments WHERE id = ?').run(a.id);
   if (a.stored) fs.rmSync(path.join(UPLOAD_DIR, a.stored), { force: true });
   const card = getCard(a.card_id);
@@ -728,7 +857,6 @@ app.post('/api/cards/:id/votes', (req, res) => {
   const card = getCard(req.params.id);
   if (!card) return notFound(res);
   const who = actorId(req);
-  if (!who) return badReq(res, 'membre requis (X-Member-Id)');
   if (req.body && req.body.remove) {
     db.prepare('DELETE FROM card_votes WHERE card_id = ? AND member_id = ?').run(card.id, who);
   } else {
@@ -780,9 +908,11 @@ app.post('/api/cards/:id/copy', (req, res) => {
 
 /* ------------------------------ Notifications ------------------------------ */
 
+// Chacun ne lit et n'acquitte que ses propres notifications
 app.get('/api/members/:id/notifications', (req, res) => {
   const member = db.prepare('SELECT id FROM members WHERE id = ?').get(req.params.id);
   if (!member) return notFound(res);
+  if (member.id !== actorId(req)) return forbidden(res);
   const rows = db.prepare(`
     SELECT n.id, n.board_id, n.card_id, n.kind, n.text, n.read, n.created_at, n.actor_id,
            m.initials AS actor_initials, m.color AS actor_color
@@ -796,6 +926,7 @@ app.get('/api/members/:id/notifications', (req, res) => {
 app.post('/api/members/:id/notifications/read', (req, res) => {
   const member = db.prepare('SELECT id FROM members WHERE id = ?').get(req.params.id);
   if (!member) return notFound(res);
+  if (member.id !== actorId(req)) return forbidden(res);
   const ids = Array.isArray(req.body && req.body.ids) ? req.body.ids.map(Number).filter(Number.isInteger) : null;
   if (ids && ids.length) {
     const stmt = db.prepare('UPDATE notifications SET read = 1 WHERE member_id = ? AND id = ?');

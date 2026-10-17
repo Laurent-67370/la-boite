@@ -14,7 +14,8 @@ const state = {
   modalDetail: null, // {card, checklists, comments, activity} de la carte ouverte
   showActivity: localStorage.getItem('laboite.showActivity') === '1',
   notifications: { unread: 0, notifications: [] },
-  userId: Number(localStorage.getItem('laboite.user') || 1),
+  userId: null, // membre de la session (fourni par le serveur)
+  me: null,
   filters: { labels: new Set(), members: new Set(), due: 'any' },
   searchIds: null,
   dragCardId: null,
@@ -50,9 +51,9 @@ function debounce(fn, ms) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-// En-têtes JSON + auteur de l'action (journal d'activité, commentaires, notifications)
+// En-têtes JSON ; l'auteur de chaque action est déduit de la session côté serveur
 function jsonHeaders() {
-  return { 'Content-Type': 'application/json', 'X-Member-Id': String(state.userId) };
+  return { 'Content-Type': 'application/json', 'X-Requested-With': 'la-boite' };
 }
 
 function api(method, url, body) {
@@ -117,6 +118,7 @@ async function refresh() {
 
 const refreshSoon = debounce(refresh, 90);
 const loadNotificationsSoon = debounce(() => loadNotifications(), 150);
+const loadBoardActivitySoon = debounce(() => loadBoardActivity(), 150);
 
 /* ------------------------------- Rendu --------------------------------- */
 
@@ -429,7 +431,7 @@ function openComposer(listId, top) {
       const res = await fetch('/api/cards', {
         method: 'POST',
         headers: jsonHeaders(),
-        body: JSON.stringify({ list_id: listId, title: value, pos, created_by: state.userId })
+        body: JSON.stringify({ list_id: listId, title: value, pos })
       });
       if (!res.ok) toast('Impossible d’ajouter la carte');
       buildLaunchAgain();
@@ -703,7 +705,14 @@ function renderMenuPopover() {
   stats.textContent = `${state.board ? state.board.name : ''} — ${state.lists.length} listes, ${total} cartes.`;
   renderBackgrounds();
   renderBoardsMenu();
+  // Menu ouvert : l'activité suit les changements (restauration, archivage…)
+  if (!$('#popover-menu').hidden) loadBoardActivitySoon();
+  // La corbeille n'est reconstruite que si son contenu change : un bouton « Restaurer »
+  // ne doit pas être remplacé sous le doigt à chaque événement temps réel.
   const trash = $('#menu-trash');
+  const trashKey = JSON.stringify([state.archived, state.archivedLists]);
+  if (trash.dataset.key === trashKey) return;
+  trash.dataset.key = trashKey;
   trash.textContent = '';
   if (!state.archived.length && !state.archivedLists.length) {
     trash.appendChild($('#trash-empty') || document.createTextNode('La corbeille est vide.'));
@@ -958,12 +967,13 @@ async function uploadAttachment(file) {
     headers: {
       'Content-Type': file.type || 'application/octet-stream',
       'X-File-Name': encodeURIComponent(file.name),
-      'X-Member-Id': String(state.userId)
+      'X-Requested-With': 'la-boite'
     },
     body: file
   });
   hint.textContent = '';
   if (res.ok) refreshSoon();
+  else if (res.status === 507) toast('Espace de stockage plein');
   else toast(res.status === 413 ? 'Fichier trop lourd (10 Mo max)' : 'Envoi impossible');
 }
 
@@ -1271,24 +1281,10 @@ async function patchCardInModal(body) {
 /* ------------------------------- Événements ------------------------------ */
 
 function wireStaticUI() {
-  // Sélecteur d'utilisateur
-  const userSel = $('#user-select');
-  userSel.value = String(state.userId);
-  userSel.addEventListener('focus', () => {
-    userSel.textContent = '';
-    for (const m of state.members) {
-      const opt = document.createElement('option');
-      opt.value = m.id;
-      opt.textContent = `${m.name} (${m.initials})`;
-      userSel.appendChild(opt);
-    }
-  });
-  userSel.addEventListener('change', () => {
-    state.userId = Number(userSel.value);
-    localStorage.setItem('laboite.user', String(state.userId));
-    renderBoard(); // boutons réservés à l'admin (corbeille de liste)
-    if (state.modalCardId) { const f = findCard(state.modalCardId); if (f) fillModal(f.card, f.list); renderFeed(); }
-    loadNotifications();
+  // Session
+  $('#btn-logout').addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST', headers: jsonHeaders() });
+    location.reload();
   });
 
   // Titre du tableau
@@ -1614,19 +1610,76 @@ function connectSSE() {
 
 /* --------------------------------- Boot ---------------------------------- */
 
-async function boot() {
-  // options initiales du select utilisateur (membres connus après 1er chargement)
-  await refresh();
-  const sel = $('#user-select');
-  if (sel.options.length === 0) {
-    for (const m of state.members) {
-      const opt = document.createElement('option');
-      opt.value = m.id;
-      opt.textContent = `${m.name} (${m.initials})`;
-      sel.appendChild(opt);
+/* ------------------------------- Connexion -------------------------------- */
+
+// Toute réponse 401 (session expirée, déconnexion ailleurs) ramène à l'écran de connexion
+const nativeFetch = window.fetch.bind(window);
+window.fetch = async (input, init) => {
+  const res = await nativeFetch(input, init);
+  const url = typeof input === 'string' ? input : input.url;
+  if (res.status === 401 && !url.includes('/api/auth/')) showLogin();
+  return res;
+};
+
+let loginShown = false;
+async function showLogin() {
+  if (loginShown) return;
+  loginShown = true;
+  const overlay = $('#login-overlay');
+  overlay.hidden = false;
+  const box = $('#login-members');
+  box.textContent = '';
+  let chosen = null;
+  try {
+    const { members } = await (await nativeFetch('/api/auth/members')).json();
+    for (const m of members) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'login-member';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', 'false');
+      b.dataset.memberId = m.id;
+      b.append(avatar(m.initials, m.color), document.createTextNode(m.name));
+      b.addEventListener('click', () => {
+        chosen = m.id;
+        for (const o of box.children) o.setAttribute('aria-checked', String(o === b));
+        $('#login-code').focus();
+      });
+      box.appendChild(b);
     }
-    sel.value = state.members.some((m) => m.id === state.userId) ? String(state.userId) : '1';
-  }
+  } catch { $('#login-error').textContent = 'Serveur injoignable.'; }
+  $('#login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = $('#login-error');
+    if (!chosen) { err.textContent = 'Choisissez votre nom.'; return; }
+    const res = await nativeFetch('/api/auth/login', {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify({ member_id: chosen, code: $('#login-code').value })
+    });
+    if (res.ok) { location.reload(); return; }
+    $('#login-code').value = '';
+    err.textContent = res.status === 429
+      ? 'Trop d’essais : réessayez dans 15 minutes.'
+      : 'Code incorrect.';
+  });
+}
+
+function renderMe() {
+  const me = state.me;
+  const av = $('#me-avatar');
+  av.textContent = me.initials;
+  av.style.background = me.color;
+  $('#me-name').textContent = me.name;
+}
+
+async function boot() {
+  const meRes = await nativeFetch('/api/auth/me');
+  if (!meRes.ok) { showLogin(); return; }
+  state.me = (await meRes.json()).member;
+  state.userId = state.me.id;
+  renderMe();
+  await refresh();
   connectSSE();
   wireStaticUI();
   loadNotifications();

@@ -681,6 +681,11 @@ input, textarea, select { font: inherit; color: inherit; }
   .search-wrap input { width: 100%; }
   .popover { top: 150px; left: 12px; right: 12px !important; width: auto; }
   .popover-notif { top: 96px; }
+  .board-header { gap: 6px 8px; padding: 6px 12px; }
+  .board-title-wrap { flex: 1 1 auto; flex-wrap: wrap; gap: 4px 8px; }
+  .board-title { font-size: 17px; white-space: normal; text-align: left; padding: 2px 4px; }
+  .board-wip { white-space: nowrap; }
+  .board-actions .btn { padding-inline: 10px; }
 }
 
 /* ------------------------- Pièces jointes, votes, tableaux ------------------------- */
@@ -723,3 +728,28 @@ input, textarea, select { font: inherit; color: inherit; }
   background: var(--card-bg); color: var(--card-fg); font: inherit; font-size: 13px;
 }
 .menu-toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+
+/* -------------------------------- Connexion -------------------------------- */
+
+.user-pick { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.user-pick .member-avatar { margin-right: 0; border-color: transparent; }
+.login-overlay {
+  position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: linear-gradient(135deg, #16324f 0%, #22577a 45%, #2f8f83 100%);
+}
+.login-overlay[hidden] { display: none; }
+.login-card {
+  width: min(380px, 100%); display: flex; flex-direction: column; gap: 14px;
+  background: var(--panel-strong); color: var(--ink); border-radius: 12px; padding: 22px; box-shadow: var(--shadow);
+}
+.login-brand { color: var(--ink); }
+.login-hint { margin: 0; color: var(--ink-soft); font-size: 14px; }
+.login-members { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.login-member {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+  border: 2px solid var(--hairline); background: var(--card-bg); color: var(--card-fg); font: inherit; cursor: pointer;
+}
+.login-member .member-avatar { margin-right: 0; border-color: transparent; }
+.login-member[aria-checked="true"] { border-color: var(--accent); }
+.login-error { min-height: 1em; color: var(--bad); font-size: 13px; }
+@media (max-width: 640px) { .me-name { display: none; } }
