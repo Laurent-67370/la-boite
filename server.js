@@ -54,8 +54,13 @@ const SESSION_COOKIE = 'lb_session';
 const SESSION_DAYS = 30;
 const ADMIN_ID = 1;
 
-// Anti-force brute : 5 échecs par membre ou 20 par IP en 15 min → blocage jusqu'à la fin de la fenêtre
+// Anti-force brute, fenêtre de 15 min :
+// - 5 échecs pour un membre depuis une même IP → ce couple est bloqué (un tiers ne bloque plus le membre partout) ;
+// - 50 échecs pour un membre toutes IP confondues → membre bloqué (attaque distribuée) ;
+// - 20 échecs depuis une IP, tous membres confondus → IP bloquée (sauf 127.0.0.1 : sans X-Forwarded-For,
+//   toutes les requêtes semblent venir de là et on bloquerait tout le monde).
 const FAIL_WINDOW = 15 * 60 * 1000;
+const LIMITS = { memberIp: 5, member: 50, ip: 20 };
 const failures = new Map(); // clé -> { n, until }
 function tooManyFailures(key, max) {
   const f = failures.get(key);
@@ -63,9 +68,25 @@ function tooManyFailures(key, max) {
 }
 function recordFailure(key) {
   const now = Date.now();
+  if (failures.size > 10000) for (const [k, f] of failures) if (f.until <= now) failures.delete(k);
   const f = failures.get(key);
   if (!f || f.until <= now) failures.set(key, { n: 1, until: now + FAIL_WINDOW });
   else f.n += 1;
+}
+
+// Garde commune à la connexion et au changement de code
+function attemptGuard(req, memberId) {
+  const loopback = /^(::1|127\.|::ffff:127\.)/.test(req.ip || '');
+  const keys = {
+    memberIp: `mi:${memberId}:${req.ip}`,
+    member: `m:${memberId}`,
+    ip: loopback ? null : `ip:${req.ip}`
+  };
+  return {
+    blocked: Object.entries(keys).some(([k, key]) => key && tooManyFailures(key, LIMITS[k])),
+    fail() { for (const key of Object.values(keys)) if (key) recordFailure(key); },
+    success() { failures.delete(keys.memberIp); }
+  };
 }
 
 function parseCookies(req) {
@@ -254,22 +275,15 @@ app.get('/api/auth/members', (_req, res) => {
 app.post('/api/auth/login', (req, res) => {
   const { member_id, code } = req.body || {};
   const id = Number(member_id);
-  // Sans X-Forwarded-For transmis par nginx, toutes les requêtes semblent venir de 127.0.0.1 :
-  // on ne limite alors que par membre, pour ne pas bloquer tout le monde à la fois.
-  const loopback = /^(::1|127\.|::ffff:127\.)/.test(req.ip || '');
-  const ipKey = loopback ? null : `ip:${req.ip}`;
-  const memberKey = `m:${id}`;
-  if ((ipKey && tooManyFailures(ipKey, 20)) || tooManyFailures(memberKey, 5)) {
-    return res.status(429).json({ error: 'too_many_attempts' });
-  }
+  const guard = attemptGuard(req, id);
+  if (guard.blocked) return res.status(429).json({ error: 'too_many_attempts' });
   const m = Number.isInteger(id) ? db.prepare('SELECT id, code_hash, code_salt FROM members WHERE id = ?').get(id) : null;
   const ok = typeof code === 'string' && auth.verifyCode(code, m && m.code_salt, m && m.code_hash);
   if (!m || !ok) {
-    if (ipKey) recordFailure(ipKey);
-    recordFailure(memberKey);
+    guard.fail();
     return res.status(401).json({ error: 'bad_credentials' });
   }
-  failures.delete(memberKey);
+  guard.success();
   const token = auth.newToken();
   const expires = new Date(Date.now() + SESSION_DAYS * 86400 * 1000).toISOString();
   db.prepare('INSERT INTO sessions (token_hash, member_id, expires_at) VALUES (?,?,?)').run(auth.tokenHash(token), m.id, expires);
@@ -293,6 +307,30 @@ app.use('/api', (req, res, next) => {
 });
 
 app.get('/api/auth/me', (req, res) => res.json({ member: req.member }));
+
+// Changer son propre code : code actuel exigé (même garde anti-force brute que la connexion).
+// Les autres sessions du membre sont fermées ; la session courante reste ouverte.
+app.post('/api/auth/code', (req, res) => {
+  const { current, next } = req.body || {};
+  const id = req.member.id;
+  const guard = attemptGuard(req, id);
+  if (guard.blocked) return res.status(429).json({ error: 'too_many_attempts' });
+  const m = db.prepare('SELECT code_hash, code_salt FROM members WHERE id = ?').get(id);
+  if (typeof current !== 'string' || !auth.verifyCode(current, m.code_salt, m.code_hash)) {
+    guard.fail();
+    return res.status(401).json({ error: 'bad_credentials' });
+  }
+  guard.success();
+  if (!auth.validCode(next)) return badReq(res, `code trop court (${auth.MIN_CODE_LENGTH} caractères minimum)`);
+  if (next === current) return badReq(res, 'nouveau code identique');
+  const { salt, hash } = auth.hashCode(next);
+  const keep = auth.tokenHash(parseCookies(req)[SESSION_COOKIE]);
+  db.transaction(() => {
+    db.prepare('UPDATE members SET code_hash = ?, code_salt = ? WHERE id = ?').run(hash, salt, id);
+    db.prepare('DELETE FROM sessions WHERE member_id = ? AND token_hash != ?').run(id, keep);
+  })();
+  res.json({ ok: true });
+});
 
 // Tableau complet : board + listes (chacune avec ses cartes actives) + labels + membres + corbeille
 app.get('/api/board/:id', (req, res) => {

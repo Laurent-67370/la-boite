@@ -15,8 +15,10 @@
   <header class="topbar" id="topbar">
     <div class="brand" id="brand"><span class="brand-box" aria-hidden="true"><span class="brand-slot"></span></span><span class="brand-name">La Boîte</span></div>
     <div class="user-pick" id="user-pick">
-      <span class="member-avatar" id="me-avatar" aria-hidden="true"></span>
-      <span class="me-name" id="me-name"></span>
+      <button id="btn-account" class="account-btn" type="button" title="Mon compte : changer mon code" aria-haspopup="dialog">
+        <span class="member-avatar" id="me-avatar" aria-hidden="true"></span>
+        <span class="me-name" id="me-name"></span>
+      </button>
       <button id="btn-logout" class="btn btn-ghost btn-sm" type="button" title="Se déconnecter">Déconnexion</button>
     </div>
     <div class="topbar-actions">
@@ -68,6 +70,21 @@
       </div>
       <ol id="notif-list" class="notif-list"></ol>
     </div>
+    <form class="popover popover-account" id="popover-account" hidden>
+      <div class="popover-title">Changer mon code</div>
+      <label class="copy-field">Code actuel
+        <input id="code-current" type="password" autocomplete="current-password" required>
+      </label>
+      <label class="copy-field">Nouveau code (6 caractères minimum)
+        <input id="code-next" type="password" autocomplete="new-password" required minlength="6">
+      </label>
+      <label class="copy-field">Confirmer le nouveau code
+        <input id="code-confirm" type="password" autocomplete="new-password" required minlength="6">
+      </label>
+      <div class="login-error" id="code-error" role="alert"></div>
+      <button class="btn btn-primary" id="code-submit" type="submit">Enregistrer</button>
+      <p class="menu-foot">Vos autres appareils seront déconnectés.</p>
+    </form>
     <div class="popover" id="popover-menu" hidden>
       <div class="popover-title">La Boîte</div>
       <div id="menu-stats" class="menu-stats"></div>

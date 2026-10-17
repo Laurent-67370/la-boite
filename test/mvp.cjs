@@ -633,6 +633,58 @@ let killed = false;
     check('32. set-code : code aléatoire à 8 chiffres, stocké haché, code court refusé', !!genCode &&
       authMod.verifyCode(genCode, row.code_salt, row.code_hash) && !row.code_hash.includes(genCode) && shortRefused,
       `${outGen.trim()}/${shortRefused}`);
+
+    /* ============================ v1.3.1 ============================ */
+
+    /* 33. Blocage par couple membre + IP : un tiers ne bloque plus le membre ailleurs */
+    const fromOtherIp = await req('POST', '/api/auth/login', { member_id: 4, code: CODES[4] }, { ANON: 1, 'X-Forwarded-For': '203.0.113.7' });
+    const stillLocked = await req('POST', '/api/auth/login', { member_id: 4, code: CODES[4] }, { ANON: 1 });
+    check('33. membre 4 bloqué depuis l’IP fautive, mais connexion OK depuis une autre IP',
+      fromOtherIp.status === 200 && stillLocked.status === 429, `${fromOtherIp.status}/${stillLocked.status}`);
+
+    /* 34. Changer son code (API) */
+    const ok2b = await req('POST', '/api/auth/login', { member_id: 2, code: CODES[2] }, { ANON: 1 });
+    const otherSession2 = [].concat(ok2b.headers['set-cookie'] || [])[0].split(';')[0];
+    const wrongCur = await req('POST', '/api/auth/code', { current: '000000', next: '765432109' }, AS(2));
+    const tooShort = await req('POST', '/api/auth/code', { current: CODES[2], next: '12' }, AS(2));
+    const sameCode = await req('POST', '/api/auth/code', { current: CODES[2], next: CODES[2] }, AS(2));
+    const changed = await req('POST', '/api/auth/code', { current: CODES[2], next: '765432109' }, AS(2));
+    const keptSession = await req('GET', '/api/auth/me', null, AS(2));
+    const killedSession = await req('GET', '/api/auth/me', null, { Cookie: otherSession2 });
+    const oldCode = await req('POST', '/api/auth/login', { member_id: 2, code: CODES[2] }, { ANON: 1, 'X-Forwarded-For': '203.0.113.8' });
+    const newCode = await req('POST', '/api/auth/login', { member_id: 2, code: '765432109' }, { ANON: 1, 'X-Forwarded-For': '203.0.113.8' });
+    const anonChange = await req('POST', '/api/auth/code', { current: '765432109', next: '111222333' }, { ANON: 1 });
+    check('34. changer son code : actuel exigé, longueur, autres sessions fermées, session courante gardée',
+      wrongCur.status === 401 && tooShort.status === 400 && sameCode.status === 400 && changed.status === 200 &&
+      keptSession.status === 200 && killedSession.status === 401 && oldCode.status === 401 && newCode.status === 200 &&
+      anonChange.status === 401,
+      [wrongCur.status, tooShort.status, sameCode.status, changed.status, keptSession.status, killedSession.status,
+        oldCode.status, newCode.status, anonChange.status].join('/'));
+    CODES[2] = '765432109';
+
+    /* 35. Changer son code depuis l'interface (membre 3, nouvelle session navigateur) */
+    const ctx3 = await browser.newContext({ baseURL: BASE, locale: 'fr-FR' });
+    const p3 = await ctx3.newPage();
+    await p3.goto('/', { waitUntil: 'domcontentloaded' });
+    await p3.click('.login-member[data-member-id="3"]');
+    await p3.fill('#login-code', CODES[3]);
+    await p3.click('#login-submit');
+    await p3.waitForSelector('.list-wrapper', { timeout: 10000 });
+    await p3.click('#btn-account');
+    await p3.fill('#code-current', CODES[3]);
+    await p3.fill('#code-next', '31415926');
+    await p3.fill('#code-confirm', '27182818');
+    await p3.click('#code-submit');
+    await p3.waitForFunction(() => /diffèrent/.test(document.querySelector('#code-error').textContent), null, { timeout: 5000 });
+    await p3.fill('#code-confirm', '31415926');
+    await p3.click('#code-submit');
+    await p3.waitForFunction(() => document.querySelector('#popover-account').hidden, null, { timeout: 5000 });
+    const old3 = await req('GET', '/api/auth/me', null, AS(3));
+    const new3 = await req('POST', '/api/auth/login', { member_id: 3, code: '31415926' }, { ANON: 1, 'X-Forwarded-For': '203.0.113.9' });
+    const stillIn = await p3.evaluate(() => fetch('/api/auth/me').then((r) => r.status));
+    check('35. UI « Changer mon code » : confirmation vérifiée, ancienne session fermée, la page reste connectée',
+      old3.status === 401 && new3.status === 200 && stillIn === 200, `${old3.status}/${new3.status}/${stillIn}`);
+    await ctx3.close();
   } catch (e) {
     check('erreur inattendue', false, e.message || e);
   } finally {

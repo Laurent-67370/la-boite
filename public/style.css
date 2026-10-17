@@ -440,6 +440,13 @@ input, textarea, select { font: inherit; color: inherit; }
 #popover-menu { right: 14px; max-height: 70vh; overflow: auto; }
 .popover-notif { right: 14px; top: 52px; width: 320px; max-height: 70vh; overflow: auto; }
 .popover-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.popover-account { left: 14px; top: 52px; width: 290px; }
+.popovers form.popover[hidden] { display: none; }
+.account-btn {
+  display: flex; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: inherit; font: inherit; padding: 2px 8px 2px 2px; cursor: pointer;
+}
+.account-btn:hover, .account-btn[aria-expanded="true"] { background: #ffffff1f; border-color: #ffffff2e; }
 
 .notif-btn { position: relative; padding-inline: 9px; }
 .notif-count {
@@ -680,7 +687,7 @@ input, textarea, select { font: inherit; color: inherit; }
   .search-wrap { flex: 1; min-width: 0; }
   .search-wrap input { width: 100%; }
   .popover { top: 150px; left: 12px; right: 12px !important; width: auto; }
-  .popover-notif { top: 96px; }
+  .popover-notif, .popover-account { top: 96px; }
   .board-header { gap: 6px 8px; padding: 6px 12px; }
   .board-title-wrap { flex: 1 1 auto; flex-wrap: wrap; gap: 4px 8px; }
   .board-title { font-size: 17px; white-space: normal; text-align: left; padding: 2px 4px; }
