@@ -1346,6 +1346,33 @@ function wireStaticUI() {
   const popF = $('#popover-filter');
   const popM = $('#popover-menu');
   const popN = $('#popover-notif');
+  const popA = $('#popover-account');
+  $('#btn-account').addEventListener('click', (e) => {
+    e.stopPropagation();
+    popF.hidden = true;
+    popM.hidden = true;
+    popN.hidden = true;
+    popA.hidden = !popA.hidden;
+    if (!popA.hidden) { $('#code-error').textContent = ''; $('#code-current').focus(); }
+  });
+  popA.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = $('#code-error');
+    const current = $('#code-current').value;
+    const next = $('#code-next').value;
+    if (next !== $('#code-confirm').value) { err.textContent = 'Les deux nouveaux codes diffèrent.'; return; }
+    const res = await api('POST', '/api/auth/code', { current, next });
+    if (res.ok) {
+      popA.reset();
+      popA.hidden = true;
+      toast('Code modifié ✓');
+      return;
+    }
+    const body = await res.json().catch(() => ({}));
+    err.textContent = res.status === 401 ? 'Code actuel incorrect.'
+      : res.status === 429 ? 'Trop d’essais : réessayez dans 15 minutes.'
+        : (body.error || 'Modification impossible.');
+  });
   $('#btn-filter').addEventListener('click', (e) => {
     e.stopPropagation();
     popM.hidden = true;
@@ -1373,7 +1400,7 @@ function wireStaticUI() {
     loadNotifications();
   });
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.popover')) { popF.hidden = true; popM.hidden = true; popN.hidden = true; }
+    if (!e.target.closest('.popover')) { popF.hidden = true; popM.hidden = true; popN.hidden = true; popA.hidden = true; }
   });
   $('#filter-clear').addEventListener('click', () => {
     state.filters.labels.clear();

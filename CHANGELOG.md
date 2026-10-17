@@ -1,5 +1,13 @@
 # Changelog — La Boîte
 
+## v1.3.1 — 2026-10-17
+
+- **Changer mon code** depuis l'application (clic sur son nom) : code actuel exigé, nouveau code confirmé (6 caractères minimum) ; les autres sessions du membre sont fermées, la session courante reste ouverte. API `POST /api/auth/code` `{current, next}`
+- **Anti-force brute affiné** : le blocage porte sur le couple membre + IP (5 échecs) ; un tiers qui tape des faux codes ne bloque plus le membre sur ses propres appareils. Garde-fous conservés : 50 échecs par membre toutes IP confondues, 20 par IP. Le changement de code passe par la même garde
+- CI : `actions/checkout` et `actions/setup-node` en v5 (fin de Node 20 sur les runners)
+- Service worker : cache `la-boite-v5`
+- Tests : 67/67
+
 ## v1.3.0 — 2026-10-17
 
 **Sécurité** — l'application était publique sans authentification : l'identité n'était qu'un en-tête `X-Member-Id` fourni par le navigateur, donc n'importe qui pouvait tout lire, tout modifier, se faire passer pour l'admin ou téléverser des fichiers sans limite.

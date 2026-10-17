@@ -4,7 +4,7 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 
 ![La Boîte — vue mobile](docs/capture-mobile.png)
 
-## Fonctionnalités (v1.3.0)
+## Fonctionnalités (v1.3.1)
 
 - **Board** : listes avec compte de cartes et **jeton de limite WIP** (`2/10` — vert, orange, rouge selon le seuil), repli d'une liste (⤢)
 - **Cartes** : titre, description (badge 📝), **couverture colorée**, **échéance** (badge orange/rouge si passée, vert si terminée ✓), **étiquettes** (chips colorées, nom au survol), **membres** (initiales colorées)
@@ -12,7 +12,7 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 - **Notifications 🔔** : commentaires, mentions, assignations, déplacements — compteur non lus en temps réel
 - **Fonds du tableau** (préréglages maison) et **copie de carte** (liste cible, checklists / étiquettes / membres au choix)
 - **Pièces jointes** (fichiers ≤ 10 Mo avec aperçu des images, liens), **votes** 👍, **tableaux modèles** et navigation entre plusieurs tableaux
-- **Accès par code** : chaque membre se connecte avec son code personnel ; session par cookie `HttpOnly` (30 jours), aucune donnée ni API accessible sans session
+- **Accès par code** : chaque membre se connecte avec son code personnel et peut le changer depuis l'application (clic sur son nom) ; session par cookie `HttpOnly` (30 jours), aucune donnée ni API accessible sans session
 - **Glisser-déposer** : cartes entre listes, réordonnancement de cartes ET de listes (positions réelles)
 - **Recherche / filtre** : titre, description, étiquette, membre, commentaire, élément de checklist, échéance
 - **Corbeille** : archivage + restauration des cartes et des listes (une liste revient avec toutes ses cartes)
@@ -44,7 +44,7 @@ Variables :
 ## Tests
 
 ```bash
-npm test     # 64 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
+npm test     # 67 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
 CHROMIUM_PATH=/chemin/vers/chrome npm test   # si le Chromium de Playwright n'est pas installé
 node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page (instance de test jetable)
 ```
@@ -77,7 +77,7 @@ La suite tourne aussi sur GitHub Actions à chaque PR et sur `main` (`.github/wo
 | `GET /api/board/:id/search?q=` | recherche |
 | `GET /api/board/:id/events` | flux SSE temps réel |
 
-Connexion : `GET /api/auth/members` (noms pour l'écran de connexion), `POST /api/auth/login` `{member_id, code}`, `POST /api/auth/logout`, `GET /api/auth/me`. Toutes les autres routes `/api` exigent la session (`401` sinon) ; l'auteur de chaque action est le membre de la session. Le membre n°1 est l'administrateur (corbeille des cartes et des listes, modération). Toute requête qui modifie doit porter l'en-tête `X-Requested-With: la-boite` (anti-CSRF, `403` sinon). Après 5 codes faux pour un membre (ou 20 depuis une même IP), la connexion est bloquée 15 minutes (`429`).
+Connexion : `GET /api/auth/members` (noms pour l'écran de connexion), `POST /api/auth/login` `{member_id, code}`, `POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/code` `{current, next}` (changer son code ; ferme les autres sessions). Toutes les autres routes `/api` exigent la session (`401` sinon) ; l'auteur de chaque action est le membre de la session. Le membre n°1 est l'administrateur (corbeille des cartes et des listes, modération). Toute requête qui modifie doit porter l'en-tête `X-Requested-With: la-boite` (anti-CSRF, `403` sinon). Après 5 codes faux pour un membre depuis une même IP, ce couple est bloqué 15 minutes (`429`) ; plafonds globaux : 50 échecs par membre, 20 par IP.
 
 ## Déploiement (VPS)
 
