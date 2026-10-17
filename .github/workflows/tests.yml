@@ -19,6 +19,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: age + lftp (copie hors site)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age lftp
       - name: Chromium pour Playwright
         run: npx playwright install --with-deps chromium
       - name: Suite Playwright (API, UI, SSE, sécurité)

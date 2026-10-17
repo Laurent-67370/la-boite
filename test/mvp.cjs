@@ -755,6 +755,46 @@ let killed = false;
       check('36d. sauvegarde altérée (SHA-256 ≠ manifeste) → restauration refusée', tamperRefused && !fs.existsSync(path.join(T, 'x.db')),
         String(tamperRefused));
     }
+
+    /* 37. Copie hors site chiffrée (age + lftp, cible file:// en test) */
+    {
+      const { execFileSync: run, spawnSync } = require('child_process');
+      const has = (bin) => spawnSync('sh', ['-c', `command -v ${bin}`]).status === 0;
+      if (!has('age') || !has('lftp')) {
+        console.log('SKIP  37. copie hors site — age/lftp absents (installés en CI)');
+      } else {
+        const T = '/tmp/la-boite-offsite-test';
+        fs.rmSync(T, { recursive: true, force: true });
+        fs.mkdirSync(path.join(T, 'remote'), { recursive: true });
+        fs.mkdirSync(path.join(T, 'up'));
+        fs.writeFileSync(path.join(T, 'up', 'piece'), 'contenu joint');
+        require('../db.js').init(path.join(T, 'data.db')).close();
+        run('age-keygen', ['-o', path.join(T, 'cle.txt')], { stdio: 'pipe' });
+        const pub = run('age-keygen', ['-y', path.join(T, 'cle.txt')]).toString().trim();
+        const env = { ...process.env, LA_BOITE_BACKUP_DIR: path.join(T, 'bk'), OFFSITE_AGE_RECIPIENT: pub,
+          OFFSITE_URL: `file://${T}/remote`, OFFSITE_KEEP: '2' };
+        for (let i = 0; i < 3; i++) {
+          run(process.execPath, [path.join(__dirname, '..', 'scripts', 'backup.cjs'), '--db', path.join(T, 'data.db'),
+            '--uploads', path.join(T, 'up'), '--dest', path.join(T, 'bk')], { stdio: 'pipe' });
+          run('bash', [path.join(__dirname, '..', 'scripts', 'offsite.sh')], { env, stdio: 'pipe' });
+        }
+        const remote = fs.readdirSync(path.join(T, 'remote', 'la-boite')).sort();
+        const latest = fs.readdirSync(path.join(T, 'bk')).filter((n) => n.startsWith('la-boite-')).sort().pop();
+        const blob = fs.readFileSync(path.join(T, 'remote', 'la-boite', remote[remote.length - 1]));
+        const encrypted = blob.toString('latin1').startsWith('age-encryption.org/v1') && !blob.includes(Buffer.from('SQLite format'));
+        fs.mkdirSync(path.join(T, 'dec'));
+        run('sh', ['-c', `age -d -i ${T}/cle.txt "${T}/remote/la-boite/${remote[remote.length - 1]}" | tar -xz -C ${T}/dec`]);
+        const decFiles = fs.readdirSync(path.join(T, 'dec')).sort();
+        let badKey = false;
+        try { run('bash', [path.join(__dirname, '..', 'scripts', 'offsite.sh')], { env: { ...env, OFFSITE_AGE_RECIPIENT: 'pas-une-cle' }, stdio: 'pipe' }); }
+        catch { badKey = true; }
+        check('37. hors site : chiffré age, 2 copies gardées, la plus récente déchiffrable, sans wal/shm, clé invalide refusée',
+          remote.length === 2 && remote[1] === `${latest}.tar.gz.age` && !remote.some((n) => n.endsWith('.part')) && encrypted &&
+          JSON.stringify(decFiles) === JSON.stringify(['data.db', 'manifest.json', 'uploads']) &&
+          fs.readFileSync(path.join(T, 'dec', 'uploads', 'piece'), 'utf8') === 'contenu joint' && badKey,
+          JSON.stringify({ remote, encrypted, decFiles, badKey }));
+      }
+    }
   } catch (e) {
     check('erreur inattendue', false, e.message || e);
   } finally {

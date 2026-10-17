@@ -1,0 +1,20 @@
+# Copie chiffrée hors du VPS de la dernière sauvegarde — lancée par la-boite-offsite.timer.
+# Prérequis : paquets age + lftp ; /etc/la-boite/offsite.env (0600, root) rempli d'après
+# deploy/offsite.env.example. Installation :
+#   cp deploy/la-boite-offsite.* /etc/systemd/system/ && systemctl daemon-reload
+#   systemctl enable --now la-boite-offsite.timer
+#   systemctl start la-boite-offsite.service && journalctl -u la-boite-offsite -n 20
+[Unit]
+Description=Copie chiffrée hors site de La Boîte
+After=network-online.target la-boite-backup.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/la-boite
+EnvironmentFile=/etc/la-boite/offsite.env
+ExecStart=/bin/bash scripts/offsite.sh
+Nice=10
+IOSchedulingClass=idle
+UMask=0077
+PrivateTmp=true

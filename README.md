@@ -4,7 +4,7 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 
 ![La Boîte — vue mobile](docs/capture-mobile.png)
 
-## Fonctionnalités (v1.4.0)
+## Fonctionnalités (v1.4.1)
 
 - **Board** : listes avec compte de cartes et **jeton de limite WIP** (`2/10` — vert, orange, rouge selon le seuil), repli d'une liste (⤢)
 - **Cartes** : titre, description (badge 📝), **couverture colorée**, **échéance** (badge orange/rouge si passée, vert si terminée ✓), **étiquettes** (chips colorées, nom au survol), **membres** (initiales colorées)
@@ -44,7 +44,7 @@ Variables :
 ## Tests
 
 ```bash
-npm test     # 71 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
+npm test     # 72 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
 CHROMIUM_PATH=/chemin/vers/chrome npm test   # si le Chromium de Playwright n'est pas installé
 node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page (instance de test jetable)
 ```
@@ -102,6 +102,21 @@ systemctl start la-boite
 - Automatisation : `deploy/la-boite-backup.service` + `.timer` (horaire) — voir l'en-tête du fichier pour l'installation
 - Les sauvegardes contiennent les codes **hachés** et les sessions : dossier en `0700`, à garder hors du web ; copier aussi ailleurs que sur le VPS (une sauvegarde sur le même disque ne protège pas d'une panne disque)
 - La restauration vérifie l'empreinte et l'intégrité avant toute écriture et conserve l'ancien état (`*.avant-restauration-…`)
+
+### Copie hors du VPS (chiffrée)
+
+`scripts/offsite.sh` envoie chaque nuit la dernière sauvegarde, chiffrée avec [age](https://age-encryption.org), vers un FTPS (ou tout ce que lftp sait joindre), relit la copie et garde les 7 dernières.
+
+1. Sur **ton poste** (pas sur le serveur) : `age-keygen -o la-boite-age.txt` → garder ce fichier en lieu sûr (gestionnaire de mots de passe + copie hors ligne) ; la ligne `age1…` affichée est la clé publique
+2. Sur le VPS : `apt install age lftp`, remplir `/etc/la-boite/offsite.env` d'après `deploy/offsite.env.example` (`chmod 600`), installer `deploy/la-boite-offsite.*` (voir l'en-tête du `.service`)
+3. Restaurer depuis la copie distante (sur une machine qui a la clé privée) :
+   ```bash
+   lftp -u UTILISATEUR -e "set ftp:ssl-force true; get la-boite/la-boite-<horodatage>.tar.gz.age; bye" ftp://HOTE
+   mkdir sauvegarde && age -d -i la-boite-age.txt la-boite-<horodatage>.tar.gz.age | tar -xz -C sauvegarde
+   node scripts/restore.cjs sauvegarde --yes      # service arrêté
+   ```
+
+Sans la clé privée, la copie distante est illisible : la perdre, c'est perdre la sauvegarde hors site.
 
 ## Historique
 
