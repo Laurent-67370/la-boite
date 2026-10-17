@@ -30,6 +30,7 @@
     <div class="board-title-wrap">
       <button id="board-title" class="board-title" type="button" title="Modifier le nom du tableau">…</button>
       <span class="board-chip" id="board-chip">Démo</span>
+      <span class="board-chip board-template-chip" id="board-template-chip" title="Tableau modèle : sert de base à de nouveaux tableaux" hidden>Modèle</span>
       <span class="board-wip" id="board-wip" hidden></span>
     </div>
     <div class="board-actions">
@@ -68,6 +69,17 @@
     <div class="popover" id="popover-menu" hidden>
       <div class="popover-title">La Boîte</div>
       <div id="menu-stats" class="menu-stats"></div>
+      <div class="filter-heading">Tableaux</div>
+      <ul id="menu-boards" class="menu-boards"></ul>
+      <form id="new-board-form" class="menu-inline-form">
+        <input id="new-board-name" placeholder="Nouveau tableau…" aria-label="Nom du nouveau tableau" autocomplete="off">
+        <button class="btn btn-primary btn-sm" type="submit">Créer</button>
+      </form>
+      <label class="menu-toggle"><input type="checkbox" id="menu-template-toggle"> Ce tableau est un modèle</label>
+      <form id="from-template-form" class="menu-inline-form" hidden>
+        <input id="from-template-name" placeholder="Nom du nouveau tableau…" aria-label="Nom du tableau à créer depuis le modèle" autocomplete="off">
+        <button class="btn btn-primary btn-sm" type="submit">Utiliser ce modèle</button>
+      </form>
       <div class="filter-heading">Fond du tableau</div>
       <div id="menu-backgrounds" class="bg-row"></div>
       <div class="filter-heading">Corbeille</div>
@@ -115,8 +127,27 @@
           <div id="modal-members" class="mem-row"></div>
         </div>
         <div class="modal-block">
+          <div class="modal-heading">Votes</div>
+          <div class="vote-row">
+            <button id="modal-vote" class="btn btn-light" type="button" aria-pressed="false">👍 Voter</button>
+            <div id="modal-voters" class="mem-row voters"></div>
+          </div>
+        </div>
+        <div class="modal-block">
           <div class="modal-heading">Couverture</div>
           <div id="modal-covers" class="cover-row"></div>
+        </div>
+        <div class="modal-block">
+          <div class="modal-heading-row">
+            <div class="modal-heading">Pièces jointes</div>
+            <label class="btn btn-light btn-sm file-pick">+ Fichier<input id="modal-attach-file" type="file" hidden></label>
+          </div>
+          <ul id="modal-attachments" class="attachments"></ul>
+          <form id="modal-attach-link" class="check-add">
+            <input id="modal-attach-url" type="url" placeholder="Coller un lien (https://…)" aria-label="Lien à joindre" autocomplete="off">
+            <button class="btn btn-primary btn-sm" type="submit">Joindre</button>
+          </form>
+          <div class="save-hint" id="attach-hint"></div>
         </div>
         <div class="modal-block">
           <div class="modal-heading-row">

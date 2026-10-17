@@ -4,13 +4,14 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 
 ![La Boîte — vue mobile](docs/capture-mobile.png)
 
-## Fonctionnalités (v1.1.0)
+## Fonctionnalités (v1.2.0)
 
 - **Board** : listes avec compte de cartes et **jeton de limite WIP** (`2/10` — vert, orange, rouge selon le seuil), repli d'une liste (⤢)
 - **Cartes** : titre, description (badge 📝), **couverture colorée**, **échéance** (badge orange/rouge si passée, vert si terminée ✓), **étiquettes** (chips colorées, nom au survol), **membres** (initiales colorées)
 - **Checklists** (progression + badge `☑ 2/5`), **commentaires** (badge `💬`, mentions `@Prénom`), **journal d'activité** par carte et par tableau
 - **Notifications 🔔** : commentaires, mentions, assignations, déplacements — compteur non lus en temps réel
 - **Fonds du tableau** (préréglages maison) et **copie de carte** (liste cible, checklists / étiquettes / membres au choix)
+- **Pièces jointes** (fichiers ≤ 10 Mo avec aperçu des images, liens), **votes** 👍, **tableaux modèles** et navigation entre plusieurs tableaux
 - **Glisser-déposer** : cartes entre listes, réordonnancement de cartes ET de listes (positions réelles)
 - **Recherche / filtre** : titre, description, étiquette, membre, commentaire, élément de checklist, échéance
 - **Corbeille** : archivage + restauration
@@ -36,7 +37,7 @@ Variables :
 ## Tests
 
 ```bash
-npm test     # 41 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
+npm test     # 51 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
 CHROMIUM_PATH=/chemin/vers/chrome npm test   # si le Chromium de Playwright n'est pas installé
 node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page
 ```
@@ -47,7 +48,8 @@ node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page
 |---|---|
 | `GET /api/health` | état du service |
 | `GET /api/board/:id` | board complet (listes, cartes, étiquettes, membres) |
-| `POST /api/boards` · `PATCH /api/boards/:id` | créer / renommer / changer le fond (`background` ∈ préréglages) |
+| `GET /api/boards` · `POST /api/boards` · `PATCH /api/boards/:id` | lister / créer / renommer, changer le fond (`background` ∈ préréglages), marquer modèle (`is_template`) |
+| `POST /api/boards/:id/copy` | nouveau tableau depuis un modèle |
 | `POST /api/lists` · `PATCH/DELETE /api/lists/:id` | listes (nom, position, WIP, repli) |
 | `POST /api/cards` · `PATCH/DELETE /api/cards/:id` | cartes (titre, description, échéance, couverture…) |
 | `POST /api/cards/:id/move` | déplacement / réordonnancement |
@@ -58,6 +60,9 @@ node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page
 | `POST /api/checklists/:id/items` · `PATCH/DELETE /api/checkitems/:id` | éléments (nom, coché, position) |
 | `POST /api/cards/:id/comments` · `PATCH/DELETE /api/comments/:id` | commentaires |
 | `POST /api/cards/:id/copy` | copier une carte |
+| `POST /api/cards/:id/attachments` | joindre un fichier (corps brut + `X-File-Name`) ou un lien (`{url}`) |
+| `GET /api/attachments/:id/file` · `DELETE /api/attachments/:id` | télécharger / retirer |
+| `POST /api/cards/:id/votes` | voter / retirer son vote (`{remove:true}`) |
 | `GET /api/board/:id/activity` | journal d'activité du tableau |
 | `GET /api/members/:id/notifications` · `POST …/notifications/read` | notifications 🔔 |
 | `GET /api/board/:id/search?q=` | recherche |
@@ -68,6 +73,7 @@ L'auteur d'une action est transmis par l'en-tête `X-Member-Id` (sélecteur d'ut
 ## Déploiement (VPS)
 
 - Service systemd `la-boite.service` → `/opt/la-boite`, port `3230`
+- Fichiers joints dans `/opt/la-boite/uploads/` (à **exclure** du rsync de déploiement, comme `data.db*`, et à inclure dans les sauvegardes)
 - nginx : vhost `trello.lhusser.fr` (proxy + `proxy_buffering off` pour le SSE + `no-cache` sur `sw.js`)
 - HTTPS : Let's Encrypt (certbot, renouvellement automatique)
 - Carte sur le portail des apps : terminal.lhusser.fr

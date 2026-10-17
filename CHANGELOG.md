@@ -1,5 +1,18 @@
 # Changelog — La Boîte
 
+## v1.2.0 — 2026-10-17
+
+Lot choisi d'après les preuves REA déjà collectées (comportement observé uniquement) : `AddCardAttachment` / `AddLinkAttachmentFromPlugin`, `AddMemberVoted` / `DeleteMemberVoted`, badge `template-badge` des tableaux modèles. Aucune preuve de « date de début » : non retenue.
+
+- **Pièces jointes** : fichiers (10 Mo max, sélecteur ou glisser-déposer sur la modale) et liens http(s) ; aperçu des images, badge `📎 n` ; l'auteur ou l'admin retire
+  - Sécurité : fichiers hors de `public/`, nom aléatoire sur disque, nom affiché assaini ; seuls PNG/JPEG/GIF/WebP s'affichent en ligne, tout le reste est forcé en téléchargement (`nosniff` + CSP `sandbox`) ; liens `javascript:` & co refusés
+- **Votes** : 👍 un vote par membre, badge `👍 n` (mis en avant si on a voté), avatars des votants dans la modale
+- **Tableaux modèles** : un tableau peut être marqué « Modèle » ; « Utiliser ce modèle » crée un nouveau tableau (listes, limites WIP, étiquettes, cartes avec couvertures et checklists décochées — sans commentaires, pièces jointes, votes, membres ni échéances)
+- **Plusieurs tableaux** : liste et création dans le menu, navigation par `?board=` ; une notification d'un autre tableau ouvre la bonne carte (`?board=&card=`)
+- Migration : `ALTER TABLE boards ADD COLUMN is_template` si absente (bases v1.0/v1.1)
+- Service worker : cache `la-boite-v3`
+- Tests : 51/51 (10 nouveaux contrôles, dont migration d'une base v1.1)
+
 ## v1.1.0 — 2026-10-17
 
 Fonctionnalités choisies d'après les preuves REA déjà collectées (`recon/`) : panneau « Comments and activity » de la modale, opérations `CardChecklistsPatcher` / `ChecklistCheckItemsPatcher` / `CopyCard` / `CardActionsId` du bundle observé. Comportement uniquement, rien de copié.

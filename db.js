@@ -99,6 +99,25 @@ CREATE TABLE IF NOT EXISTS notifications (
   read INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
+-- Pièces jointes : fichier téléversé (stored = nom aléatoire sur disque) ou lien http(s)
+CREATE TABLE IF NOT EXISTS attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  card_id INTEGER NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+  member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('file','link')),
+  name TEXT NOT NULL,
+  url TEXT,
+  mime TEXT,
+  size INTEGER,
+  stored TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE TABLE IF NOT EXISTS card_votes (
+  card_id INTEGER NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+  member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  PRIMARY KEY (card_id, member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_attachments_card ON attachments(card_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_member ON notifications(member_id, read, id);
 CREATE INDEX IF NOT EXISTS idx_checklists_card ON checklists(card_id);
 CREATE INDEX IF NOT EXISTS idx_check_items_checklist ON check_items(checklist_id);
@@ -214,7 +233,16 @@ function open(dbPath) {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(SCHEMA);
+  migrate(db);
   return db;
+}
+
+// Colonnes ajoutées après coup sur des tables existantes (bases v1.0/v1.1 en production)
+function migrate(db) {
+  const boardCols = db.prepare('PRAGMA table_info(boards)').all().map((c) => c.name);
+  if (!boardCols.includes('is_template')) {
+    db.exec('ALTER TABLE boards ADD COLUMN is_template INTEGER NOT NULL DEFAULT 0');
+  }
 }
 
 /** Instancie la base (fichier + WAL) et sème les données de démonstration si vide. */
