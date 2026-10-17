@@ -760,3 +760,33 @@ input, textarea, select { font: inherit; color: inherit; }
 .login-member[aria-checked="true"] { border-color: var(--accent); }
 .login-error { min-height: 1em; color: var(--bad); font-size: 13px; }
 @media (max-width: 640px) { .me-name { display: none; } }
+
+/* ------------------------------ Dates ------------------------------ */
+
+.date-label { min-width: 72px; font-size: 13px; color: var(--ink-soft); }
+#modal-start { border: 1px solid var(--hairline); border-radius: 7px; padding: 6px 9px; background: var(--panel-strong); color: inherit; }
+#modal-start:focus { outline: none; border-color: var(--accent); }
+.due-row + .due-row { margin-top: 6px; }
+
+/* --------------------------- Raccourcis --------------------------- */
+
+.shortcuts-card { max-width: 420px; }
+.shortcuts-title { margin: 0; font-size: 16px; }
+.shortcuts-list { display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; margin: 0; padding: 0 22px 8px; align-items: center; }
+.shortcuts-list dt { margin: 0; }
+.shortcuts-list dd { margin: 0; font-size: 14px; }
+.shortcuts-card .menu-foot { padding: 0 22px 18px; margin: 0; }
+kbd {
+  display: inline-block; min-width: 1.6em; padding: 2px 7px; border-radius: 6px; text-align: center;
+  border: 1px solid var(--hairline); border-bottom-width: 2px; background: var(--card-bg); color: var(--card-fg);
+  font: 600 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ------------------------ Glisser-déposer tactile ------------------------ */
+
+.list-card { -webkit-touch-callout: none; }
+.touch-ghost {
+  position: fixed; left: 0; top: 0; z-index: 400; pointer-events: none; margin: 0;
+  box-shadow: 0 10px 28px rgba(9, 20, 30, .35); opacity: .95;
+}
+body.touch-dragging { user-select: none; -webkit-user-select: none; }

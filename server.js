@@ -259,7 +259,13 @@ function nextPos(table, column, parentId) {
   return db.prepare(`SELECT COALESCE(MAX(pos),0) AS m FROM ${table} WHERE ${column} = ?`).get(parentId).m + 100;
 }
 
-const CARD_FIELDS_OK = new Set(['title', 'description', 'due_at', 'due_complete', 'cover', 'pos', 'due_badged']);
+const CARD_FIELDS_OK = new Set(['title', 'description', 'start_at', 'due_at', 'due_complete', 'cover', 'pos', 'due_badged']);
+const START_RE = /^\d{4}-\d{2}-\d{2}$/; // date de début : jour seul (AAAA-MM-JJ)
+
+function fmtDay(day) {
+  const [y, m, d] = day.split('-');
+  return `${d}/${m}/${y}`;
+}
 
 /* -------------------------------- API ------------------------------- */
 
@@ -346,7 +352,7 @@ app.get('/api/board/:id', (req, res) => {
     SELECT m.id, m.name, m.initials, m.color FROM card_members cm JOIN members m ON m.id = cm.member_id
     WHERE cm.card_id = ? ORDER BY m.id`);
   const cardStmt = db.prepare(`
-    SELECT c.id, c.list_id, c.title, c.description, c.pos, c.cover, c.due_at, c.due_complete, c.due_badged,
+    SELECT c.id, c.list_id, c.title, c.description, c.pos, c.cover, c.start_at, c.due_at, c.due_complete, c.due_badged,
            c.archived, c.created_at, c.created_by
     FROM cards c WHERE c.list_id = ? AND c.archived = 0 ORDER BY c.pos`);
   const checkStmt = db.prepare(`
@@ -539,9 +545,21 @@ app.patch('/api/cards/:id', (req, res) => {
     if (typeof body.description !== 'string') return badReq(res, 'description invalide');
     updates.push('description = ?'); values.push(body.description);
   }
+  if ('start_at' in body) {
+    if (body.start_at !== null && !(typeof body.start_at === 'string' && START_RE.test(body.start_at))) {
+      return badReq(res, 'start_at invalide (AAAA-MM-JJ)');
+    }
+    updates.push('start_at = ?'); values.push(body.start_at);
+  }
   if ('due_at' in body) {
     if (body.due_at !== null && typeof body.due_at !== 'string') return badReq(res, 'due_at invalide');
     updates.push('due_at = ?'); values.push(body.due_at);
+  }
+  // Le début ne peut pas suivre l'échéance (comparaison au jour près)
+  const nextStart = 'start_at' in body ? body.start_at : card.start_at;
+  const nextDue = 'due_at' in body ? body.due_at : card.due_at;
+  if (nextStart && nextDue && nextStart > String(nextDue).slice(0, 10)) {
+    return badReq(res, 'la date de début doit précéder l’échéance');
   }
   if ('due_complete' in body) { updates.push('due_complete = ?'); values.push(body.due_complete ? 1 : 0); }
   if ('due_badged' in body) { updates.push('due_badged = ?'); values.push(body.due_badged ? 1 : 0); }
@@ -556,6 +574,10 @@ app.patch('/api/cards/:id', (req, res) => {
   if ('due_complete' in body && !!body.due_complete !== !!card.due_complete) {
     logActivity(boardId, card.id, actorId(req), 'due_complete',
       body.due_complete ? 'a marqué l’échéance comme terminée' : 'a marqué l’échéance comme non terminée');
+  }
+  if ('start_at' in body && body.start_at !== card.start_at) {
+    logActivity(boardId, card.id, actorId(req), 'start_changed',
+      body.start_at ? `a fixé le début au ${fmtDay(body.start_at)}` : 'a retiré la date de début');
   }
   if ('due_at' in body && body.due_at !== card.due_at) {
     logActivity(boardId, card.id, actorId(req), 'due_changed',
@@ -925,8 +947,8 @@ app.post('/api/cards/:id/copy', (req, res) => {
     } else {
       pos = nextPos('cards', 'list_id', target.id);
     }
-    const r = db.prepare(`INSERT INTO cards (list_id, title, description, pos, cover, due_at, due_complete, created_by)
-      VALUES (?,?,?,?,?,?,?,?)`).run(target.id, title, src.description, pos, src.cover, src.due_at, src.due_complete, author);
+    const r = db.prepare(`INSERT INTO cards (list_id, title, description, pos, cover, start_at, due_at, due_complete, created_by)
+      VALUES (?,?,?,?,?,?,?,?,?)`).run(target.id, title, src.description, pos, src.cover, src.start_at, src.due_at, src.due_complete, author);
     const id = r.lastInsertRowid;
     if (keep.labels) db.prepare('INSERT INTO card_labels (card_id, label_id) SELECT ?, label_id FROM card_labels WHERE card_id = ?').run(id, src.id);
     if (keep.members) db.prepare('INSERT INTO card_members (card_id, member_id) SELECT ?, member_id FROM card_members WHERE card_id = ?').run(id, src.id);

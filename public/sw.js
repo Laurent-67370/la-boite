@@ -1,7 +1,7 @@
 // sw.js — « La Boîte » : cache-first pour le statique, network-first pour les navigations
 'use strict';
 
-const CACHE = 'la-boite-v5';
+const CACHE = 'la-boite-v6';
 const CORE = [
   '/',
   '/style.css',
