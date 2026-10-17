@@ -1,5 +1,17 @@
 # Changelog — La Boîte
 
+## v1.2.1 — 2026-10-17
+
+Correctif.
+
+- **Supprimer une liste détruisait ses cartes** : `DELETE /api/lists/:id` archivait les cartes puis supprimait la liste, et la cascade de clé étrangère effaçait alors les cartes (et leurs checklists, commentaires, pièces jointes) sans trace. La liste est désormais **archivée** : ses cartes restent intactes, invisibles avec elle, et reviennent quand on la restaure depuis la corbeille.
+- Journal d'activité : `list_archived` / `list_unarchived`
+- Une liste archivée n'accepte plus de nouvelles cartes, déplacements ni copies (404) et sort de la recherche et des copies de tableau
+- Restaurer une carte d'une liste archivée restaure aussi la liste
+- Interface : bouton 🗑 dans l'en-tête de liste (admin), listes dans la corbeille avec « Restaurer »
+- Migration : `ALTER TABLE lists ADD COLUMN archived` si absente
+- Tests : 55/55 (4 nouveaux contrôles)
+
 ## v1.2.0 — 2026-10-17
 
 Lot choisi d'après les preuves REA déjà collectées (comportement observé uniquement) : `AddCardAttachment` / `AddLinkAttachmentFromPlugin`, `AddMemberVoted` / `DeleteMemberVoted`, badge `template-badge` des tableaux modèles. Aucune preuve de « date de début » : non retenue.

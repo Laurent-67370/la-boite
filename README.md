@@ -14,7 +14,7 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 - **Pièces jointes** (fichiers ≤ 10 Mo avec aperçu des images, liens), **votes** 👍, **tableaux modèles** et navigation entre plusieurs tableaux
 - **Glisser-déposer** : cartes entre listes, réordonnancement de cartes ET de listes (positions réelles)
 - **Recherche / filtre** : titre, description, étiquette, membre, commentaire, élément de checklist, échéance
-- **Corbeille** : archivage + restauration
+- **Corbeille** : archivage + restauration des cartes et des listes (une liste revient avec toutes ses cartes)
 - **Temps réel** : SSE (`/api/board/:id/events`) — une carte créée sur un onglet apparaît instantanément sur les autres, sans rechargement
 - **PWA installable** (manifest + service worker, mise hors-ligne des fichiers statiques) + **mode sombre**
 - Données locales : SQLite (mode WAL) — aucune donnée ne quitte le serveur
@@ -37,7 +37,7 @@ Variables :
 ## Tests
 
 ```bash
-npm test     # 51 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
+npm test     # 55 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
 CHROMIUM_PATH=/chemin/vers/chrome npm test   # si le Chromium de Playwright n'est pas installé
 node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page
 ```
@@ -50,7 +50,7 @@ node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page
 | `GET /api/board/:id` | board complet (listes, cartes, étiquettes, membres) |
 | `GET /api/boards` · `POST /api/boards` · `PATCH /api/boards/:id` | lister / créer / renommer, changer le fond (`background` ∈ préréglages), marquer modèle (`is_template`) |
 | `POST /api/boards/:id/copy` | nouveau tableau depuis un modèle |
-| `POST /api/lists` · `PATCH/DELETE /api/lists/:id` | listes (nom, position, WIP, repli) |
+| `POST /api/lists` · `PATCH/DELETE /api/lists/:id` · `POST /api/lists/:id/unarchive` | listes (nom, position, WIP, repli) ; `DELETE` = mise à la corbeille, cartes conservées |
 | `POST /api/cards` · `PATCH/DELETE /api/cards/:id` | cartes (titre, description, échéance, couverture…) |
 | `POST /api/cards/:id/move` | déplacement / réordonnancement |
 | `POST /api/cards/:id/labels` · `/members` | rattacher / retirer |

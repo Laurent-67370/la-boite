@@ -243,6 +243,10 @@ function migrate(db) {
   if (!boardCols.includes('is_template')) {
     db.exec('ALTER TABLE boards ADD COLUMN is_template INTEGER NOT NULL DEFAULT 0');
   }
+  const listCols = db.prepare('PRAGMA table_info(lists)').all().map((c) => c.name);
+  if (!listCols.includes('archived')) {
+    db.exec('ALTER TABLE lists ADD COLUMN archived INTEGER NOT NULL DEFAULT 0');
+  }
 }
 
 /** Instancie la base (fichier + WAL) et sème les données de démonstration si vide. */

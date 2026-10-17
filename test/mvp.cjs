@@ -478,6 +478,58 @@ let killed = false;
     const migRow = migrated.prepare('SELECT name, is_template FROM boards').get();
     migrated.close();
     check('25. migration : colonne is_template ajoutée, données conservées', migRow.name === 'Ancien' && migRow.is_template === 0, JSON.stringify(migRow));
+
+    /* ============================ v1.2.1 ============================ */
+
+    /* 26. Supprimer une liste n'efface aucune carte (archivage de la liste) */
+    const b26 = (await req('GET', '/api/board/1')).json;
+    const livrer = b26.lists.find((l) => l.name === 'À livrer');
+    const livrerIds = livrer.cards.map((c) => c.id);
+    const delList = await req('DELETE', `/api/lists/${livrer.id}`, null, AS(1));
+    const b26b = (await req('GET', '/api/board/1')).json;
+    const cardsStillThere = await Promise.all(livrerIds.map((id) => req('GET', `/api/cards/${id}`)));
+    const moveIntoArchived = await req('POST', `/api/cards/${proto.id}/move`, { list_id: livrer.id, pos: 1 }, AS(1));
+    const createIntoArchived = await req('POST', '/api/cards', { list_id: livrer.id, title: 'x' }, AS(1));
+    const searchHidden = await req('GET', `/api/board/1/search?q=${encodeURIComponent('Publier')}`);
+    const actList = await req('GET', '/api/board/1/activity?limit=3');
+    check('26a. DELETE liste → archivée, cartes intactes, plus de cible', delList.status === 200 && livrerIds.length > 0 &&
+      !b26b.lists.some((l) => l.id === livrer.id) && cardsStillThere.every((r) => r.status === 200 && !r.json.card.archived) &&
+      b26b.archived_lists.some((l) => l.id === livrer.id && l.cards === livrerIds.length) &&
+      moveIntoArchived.status === 404 && createIntoArchived.status === 404 &&
+      !searchHidden.json.results.some((c) => livrerIds.includes(c.id)) &&
+      actList.json.activity.some((a) => a.kind === 'list_archived'),
+      JSON.stringify({ del: delList.status, mv: moveIntoArchived.status, cr: createIntoArchived.status, al: b26b.archived_lists }));
+    await page.waitForFunction((id) => !document.querySelector(`.list-wrapper[data-list-id="${id}"]`), String(livrer.id), { timeout: 6000 });
+    await page.click('#btn-main-menu');
+    await page.locator('#menu-trash .trash-row', { hasText: 'À livrer' }).locator('button').click();
+    await page.waitForFunction((id) => !!document.querySelector(`.list-wrapper[data-list-id="${id}"]`), String(livrer.id), { timeout: 6000 });
+    const b26c = (await req('GET', '/api/board/1')).json;
+    const restored = b26c.lists.find((l) => l.id === livrer.id);
+    check('26b. UI : liste restaurée depuis la corbeille avec ses cartes', restored &&
+      livrerIds.every((id) => restored.cards.some((c) => c.id === id)), JSON.stringify(restored && restored.cards.map((c) => c.id)));
+    await page.mouse.click(5, 700);
+
+    /* 27. Restaurer une carte d'une liste archivée restaure la liste */
+    const solo = await req('POST', '/api/lists', { board_id: 1, name: 'Éphémère' }, AS(1));
+    const soloCard = await req('POST', '/api/cards', { list_id: solo.json.list.id, title: 'Carte solitaire' }, AS(1));
+    await req('DELETE', `/api/cards/${soloCard.json.card.id}`, null, AS(1));
+    await req('DELETE', `/api/lists/${solo.json.list.id}`, null, AS(1));
+    const unSolo = await req('POST', `/api/cards/${soloCard.json.card.id}/unarchive`, null, AS(1));
+    const b27 = (await req('GET', '/api/board/1')).json;
+    check('27. restaurer la carte → sa liste revient aussi', unSolo.status === 200 &&
+      b27.lists.some((l) => l.id === solo.json.list.id && l.cards.some((c) => c.id === soloCard.json.card.id)),
+      JSON.stringify(b27.lists.map((l) => l.name)));
+
+    /* 28. Migration : base sans colonne lists.archived */
+    const mig2 = '/tmp/la-boite-migration-test2.db';
+    for (const sfx of ['', '-wal', '-shm']) fs.existsSync(mig2 + sfx) && fs.unlinkSync(mig2 + sfx);
+    const legacy2 = new Database(mig2);
+    legacy2.exec("CREATE TABLE boards (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, background TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now'))); CREATE TABLE lists (id INTEGER PRIMARY KEY AUTOINCREMENT, board_id INTEGER NOT NULL, name TEXT NOT NULL, pos REAL NOT NULL, wip_limit INTEGER, collapsed INTEGER NOT NULL DEFAULT 0); INSERT INTO boards (name) VALUES ('B'); INSERT INTO lists (board_id, name, pos) VALUES (1, 'L', 100);");
+    legacy2.close();
+    const m2 = openDb(mig2);
+    const m2row = m2.prepare('SELECT name, archived FROM lists').get();
+    m2.close();
+    check('28. migration : colonne lists.archived ajoutée, listes conservées', m2row.name === 'L' && m2row.archived === 0, JSON.stringify(m2row));
   } catch (e) {
     check('erreur inattendue', false, e.message || e);
   } finally {

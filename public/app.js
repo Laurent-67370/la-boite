@@ -9,6 +9,7 @@ const state = {
   labels: [],
   members: [],
   archived: [],
+  archivedLists: [],
   backgrounds: [],
   modalDetail: null, // {card, checklists, comments, activity} de la carte ouverte
   showActivity: localStorage.getItem('laboite.showActivity') === '1',
@@ -104,6 +105,7 @@ async function refresh() {
   state.labels = data.labels;
   state.members = data.members;
   state.archived = data.archived || [];
+  state.archivedLists = data.archived_lists || [];
   state.backgrounds = data.backgrounds || [];
   renderBoard();
   renderPopovers();
@@ -202,6 +204,21 @@ function buildList(list) {
     await patchList(list.id, { collapsed: list.collapsed ? 0 : 1 });
   });
   head.append(nameBtn, count, fold);
+  if (isAdmin()) {
+    const arch = document.createElement('button');
+    arch.type = 'button';
+    arch.className = 'collapse-btn list-archive-btn';
+    arch.title = 'Mettre la liste à la corbeille (ses cartes sont conservées)';
+    arch.textContent = '🗑';
+    arch.addEventListener('mousedown', (e) => e.stopPropagation());
+    arch.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm(`Mettre la liste « ${list.name} » à la corbeille ? Elle pourra être restaurée avec ses cartes.`)) return;
+      const res = await api('DELETE', `/api/lists/${list.id}`);
+      if (res.ok) { toast('Liste mise à la corbeille'); refreshSoon(); }
+    });
+    head.appendChild(arch);
+  }
   wrap.appendChild(head);
 
   // Spine (liste repliée)
@@ -688,9 +705,25 @@ function renderMenuPopover() {
   renderBoardsMenu();
   const trash = $('#menu-trash');
   trash.textContent = '';
-  if (!state.archived.length) {
+  if (!state.archived.length && !state.archivedLists.length) {
     trash.appendChild($('#trash-empty') || document.createTextNode('La corbeille est vide.'));
     return;
+  }
+  for (const list of state.archivedLists) {
+    const row = document.createElement('div');
+    row.className = 'trash-row';
+    const name = document.createElement('span');
+    name.textContent = `Liste « ${list.name} » (${list.cards} carte${list.cards > 1 ? 's' : ''})`;
+    const restore = document.createElement('button');
+    restore.type = 'button';
+    restore.textContent = 'Restaurer';
+    restore.addEventListener('click', async () => {
+      await fetch(`/api/lists/${list.id}/unarchive`, { method: 'POST', headers: jsonHeaders() });
+      refreshSoon();
+      toast('Liste restaurée');
+    });
+    row.append(name, restore);
+    trash.appendChild(row);
   }
   for (const card of state.archived) {
     const row = document.createElement('div');
@@ -1253,6 +1286,7 @@ function wireStaticUI() {
   userSel.addEventListener('change', () => {
     state.userId = Number(userSel.value);
     localStorage.setItem('laboite.user', String(state.userId));
+    renderBoard(); // boutons réservés à l'admin (corbeille de liste)
     if (state.modalCardId) { const f = findCard(state.modalCardId); if (f) fillModal(f.card, f.list); renderFeed(); }
     loadNotifications();
   });
