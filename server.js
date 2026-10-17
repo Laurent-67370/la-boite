@@ -75,6 +75,78 @@ function notFound(res) {
   return res.status(404).json({ error: 'not_found' });
 }
 
+function getCard(id) {
+  return db.prepare('SELECT * FROM cards WHERE id = ?').get(id);
+}
+
+function boardOfList(listId) {
+  return db.prepare('SELECT board_id FROM lists WHERE id = ?').get(listId).board_id;
+}
+
+function boardOfCard(card) {
+  return boardOfList(card.list_id);
+}
+
+// Auteur de l'action : en-tête X-Member-Id (sélecteur d'utilisateur côté client), sinon inconnu
+function actorId(req) {
+  const raw = req.get('X-Member-Id') || (req.body && req.body.member_id);
+  const id = Number(raw);
+  if (!Number.isInteger(id)) return null;
+  return db.prepare('SELECT id FROM members WHERE id = ?').get(id) ? id : null;
+}
+
+function logActivity(boardId, cardId, memberId, kind, text) {
+  db.prepare('INSERT INTO activity (board_id, card_id, member_id, kind, text) VALUES (?,?,?,?,?)')
+    .run(boardId, cardId, memberId, kind, text);
+}
+
+// Notifie les membres de la carte (+ destinataires explicites), jamais l'auteur de l'action
+function notify(card, actor, kind, text, extraIds = []) {
+  const boardId = boardOfCard(card);
+  const ids = new Set(db.prepare('SELECT member_id FROM card_members WHERE card_id = ?').all(card.id).map((r) => r.member_id));
+  for (const id of extraIds) ids.add(id);
+  ids.delete(actor);
+  const ins = db.prepare('INSERT INTO notifications (member_id, board_id, card_id, actor_id, kind, text) VALUES (?,?,?,?,?,?)');
+  for (const id of ids) ins.run(id, boardId, card.id, actor, kind, text);
+  if (ids.size) broadcast(boardId, { type: 'notification', members: [...ids] });
+}
+
+// Mentions « @Prénom » ou « @INITIALES » dans un commentaire
+function mentionedMembers(text) {
+  const out = [];
+  for (const m of db.prepare('SELECT id, name, initials FROM members').all()) {
+    const alt = [m.name, m.initials].map((v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+    const re = new RegExp(`(^|\\s)@(${alt})(?![\\p{L}\\d])`, 'iu');
+    if (re.test(text)) out.push(m.id);
+  }
+  return out;
+}
+
+const ACTIVITY_SELECT = `
+  SELECT a.id, a.card_id, a.kind, a.text, a.created_at, a.member_id,
+         m.name AS member_name, m.initials AS member_initials, m.color AS member_color, c.title AS card_title
+  FROM activity a
+  LEFT JOIN members m ON m.id = a.member_id
+  LEFT JOIN cards c ON c.id = a.card_id`;
+
+function cardChecklists(cardId) {
+  const lists = db.prepare('SELECT id, card_id, name, pos FROM checklists WHERE card_id = ? ORDER BY pos, id').all(cardId);
+  const itemStmt = db.prepare('SELECT id, checklist_id, name, pos, checked FROM check_items WHERE checklist_id = ? ORDER BY pos, id');
+  for (const cl of lists) {
+    cl.items = itemStmt.all(cl.id).map((it) => ({ ...it, checked: !!it.checked }));
+  }
+  return lists;
+}
+
+const COMMENT_SELECT = `
+  SELECT co.id, co.card_id, co.member_id, co.text, co.created_at, co.edited_at,
+         m.name AS member_name, m.initials AS member_initials, m.color AS member_color
+  FROM comments co LEFT JOIN members m ON m.id = co.member_id`;
+
+function nextPos(table, column, parentId) {
+  return db.prepare(`SELECT COALESCE(MAX(pos),0) AS m FROM ${table} WHERE ${column} = ?`).get(parentId).m + 100;
+}
+
 const CARD_FIELDS_OK = new Set(['title', 'description', 'due_at', 'due_complete', 'cover', 'pos', 'due_badged']);
 
 /* -------------------------------- API ------------------------------- */
@@ -98,9 +170,15 @@ app.get('/api/board/:id', (req, res) => {
     SELECT c.id, c.list_id, c.title, c.description, c.pos, c.cover, c.due_at, c.due_complete, c.due_badged,
            c.archived, c.created_at, c.created_by
     FROM cards c WHERE c.list_id = ? AND c.archived = 0 ORDER BY c.pos`);
+  const checkStmt = db.prepare(`
+    SELECT COUNT(ci.id) AS total, COALESCE(SUM(ci.checked),0) AS done
+    FROM checklists cl JOIN check_items ci ON ci.checklist_id = cl.id WHERE cl.card_id = ?`);
+  const commentStmt = db.prepare('SELECT COUNT(*) AS n FROM comments WHERE card_id = ?');
   for (const list of lists) {
     list.cards = cardStmt.all(list.id).map((c) => {
       c.labels = labelStmt.all(c.id);
+      c.checklist = checkStmt.get(c.id);
+      c.comments_count = commentStmt.get(c.id).n;
       c.members = memberStmt.all(c.id);
       c.due_complete = !!c.due_complete;
       c.archived = !!c.archived;
@@ -114,7 +192,7 @@ app.get('/api/board/:id', (req, res) => {
     SELECT c.id, c.list_id, c.title, c.archived FROM cards c
     JOIN lists l ON l.id = c.list_id
     WHERE l.board_id = ? AND c.archived = 1 ORDER BY c.id DESC`).all(board.id);
-  res.json({ board, lists, labels, members, archived });
+  res.json({ board, lists, labels, members, archived, backgrounds: BACKGROUNDS });
 });
 
 app.post('/api/boards', (req, res) => {
@@ -128,9 +206,17 @@ app.post('/api/boards', (req, res) => {
 app.patch('/api/boards/:id', (req, res) => {
   const board = getBoard(req.params.id);
   if (!board) return notFound(res);
-  const { name } = req.body || {};
-  if (typeof name !== 'string' || !name.trim()) return badReq(res, 'name requis');
-  db.prepare('UPDATE boards SET name = ? WHERE id = ?').run(name.trim(), board.id);
+  const { name, background } = req.body || {};
+  if (name === undefined && background === undefined) return badReq(res, 'aucun champ');
+  if (name !== undefined) {
+    if (typeof name !== 'string' || !name.trim()) return badReq(res, 'name requis');
+    db.prepare('UPDATE boards SET name = ? WHERE id = ?').run(name.trim(), board.id);
+  }
+  if (background !== undefined) {
+    // Fond : un des préréglages maison (dégradé ou aplat) — pas de CSS arbitraire
+    if (!BACKGROUNDS.includes(background)) return badReq(res, 'background inconnu');
+    db.prepare('UPDATE boards SET background = ? WHERE id = ?').run(background, board.id);
+  }
   broadcast(board.id, { type: 'board', id: board.id });
   res.json({ board: getBoard(board.id) });
 });
@@ -186,6 +272,8 @@ app.post('/api/cards', (req, res) => {
   const r = db.prepare('INSERT INTO cards (list_id, title, pos, created_by) VALUES (?,?,?,?)').run(
     list.id, title.trim(), pos, created_by == null ? null : Number(created_by)
   );
+  logActivity(list.board_id, r.lastInsertRowid, actorId(req) ?? (created_by == null ? null : Number(created_by)),
+    'card_created', `a ajouté cette carte à « ${list.name} »`);
   broadcast(list.board_id, { type: 'card', id: r.lastInsertRowid });
   res.status(201).json({ card: db.prepare('SELECT * FROM cards WHERE id = ?').get(r.lastInsertRowid) });
 });
@@ -220,9 +308,17 @@ app.patch('/api/cards/:id', (req, res) => {
   if ('pos' in body && isFiniteNumber(Number(body.pos))) { updates.push('pos = ?'); values.push(Number(body.pos)); }
   if (!updates.length) return badReq(res, 'aucun champ');
   db.prepare(`UPDATE cards SET ${updates.join(', ')} WHERE id = ?`).run(...values, card.id);
-  const list = db.prepare('SELECT board_id FROM lists WHERE id = ?').get(card.list_id);
-  broadcast(list.board_id, { type: 'card', id: card.id });
-  res.json({ card: db.prepare('SELECT * FROM cards WHERE id = ?').get(card.id) });
+  const boardId = boardOfCard(card);
+  if ('due_complete' in body && !!body.due_complete !== !!card.due_complete) {
+    logActivity(boardId, card.id, actorId(req), 'due_complete',
+      body.due_complete ? 'a marqué l’échéance comme terminée' : 'a marqué l’échéance comme non terminée');
+  }
+  if ('due_at' in body && body.due_at !== card.due_at) {
+    logActivity(boardId, card.id, actorId(req), 'due_changed',
+      body.due_at ? `a fixé l’échéance au ${body.due_at.replace('T', ' à ')}` : 'a retiré l’échéance');
+  }
+  broadcast(boardId, { type: 'card', id: card.id });
+  res.json({ card: getCard(card.id) });
 });
 
 // Suppression = mise à la corbeille (restauration via /unarchive)
@@ -230,8 +326,9 @@ app.delete('/api/cards/:id', (req, res) => {
   const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(req.params.id);
   if (!card) return notFound(res);
   db.prepare('UPDATE cards SET archived = 1 WHERE id = ?').run(card.id);
-  const list = db.prepare('SELECT board_id FROM lists WHERE id = ?').get(card.list_id);
-  broadcast(list.board_id, { type: 'card', id: card.id });
+  const boardId = boardOfCard(card);
+  logActivity(boardId, card.id, actorId(req), 'card_archived', 'a mis cette carte à la corbeille');
+  broadcast(boardId, { type: 'card', id: card.id });
   res.json({ ok: true });
 });
 
@@ -239,8 +336,9 @@ app.post('/api/cards/:id/unarchive', (req, res) => {
   const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(req.params.id);
   if (!card) return notFound(res);
   db.prepare('UPDATE cards SET archived = 0 WHERE id = ?').run(card.id);
-  const list = db.prepare('SELECT board_id FROM lists WHERE id = ?').get(card.list_id);
-  broadcast(list.board_id, { type: 'card', id: card.id });
+  const boardId = boardOfCard(card);
+  logActivity(boardId, card.id, actorId(req), 'card_unarchived', 'a restauré cette carte');
+  broadcast(boardId, { type: 'card', id: card.id });
   res.json({ card: db.prepare('SELECT * FROM cards WHERE id = ?').get(card.id) });
 });
 
@@ -253,6 +351,12 @@ app.post('/api/cards/:id/move', (req, res) => {
   const pos = isFiniteNumber(Number(body.pos)) ? Number(body.pos) : null;
   if (pos === null) return badReq(res, 'pos requis');
   db.prepare('UPDATE cards SET list_id = ?, pos = ? WHERE id = ?').run(target.id, pos, card.id);
+  if (target.id !== card.list_id) {
+    const from = db.prepare('SELECT name FROM lists WHERE id = ?').get(card.list_id);
+    logActivity(target.board_id, card.id, actorId(req), 'card_moved',
+      `a déplacé cette carte de « ${from ? from.name : '?'} » vers « ${target.name} »`);
+    notify(card, actorId(req), 'moved', `« ${card.title} » est passée dans « ${target.name} »`);
+  }
   broadcast(target.board_id, { type: 'card', id: card.id });
   res.json({ card: db.prepare('SELECT * FROM cards WHERE id = ?').get(card.id) });
 });
@@ -283,13 +387,254 @@ app.post('/api/cards/:id/members', (req, res) => {
   } else {
     const member = db.prepare('SELECT * FROM members WHERE id = ?').get(Number(body.member_id));
     if (!member) return notFound(res);
-    db.prepare('INSERT OR IGNORE INTO card_members (card_id, member_id) VALUES (?,?)').run(card.id, member.id);
+    const added = db.prepare('INSERT OR IGNORE INTO card_members (card_id, member_id) VALUES (?,?)').run(card.id, member.id);
+    const actor = actorId(req);
+    if (added.changes && member.id !== actor) {
+      const who = actor ? db.prepare('SELECT name FROM members WHERE id = ?').get(actor).name : 'Quelqu’un';
+      db.prepare('INSERT INTO notifications (member_id, board_id, card_id, actor_id, kind, text) VALUES (?,?,?,?,?,?)')
+        .run(member.id, list.board_id, card.id, actor, 'assigned', `${who} vous a ajouté à « ${card.title} »`);
+      broadcast(list.board_id, { type: 'notification', members: [member.id] });
+    }
   }
   broadcast(list.board_id, { type: 'card', id: card.id });
   res.json({ ok: true });
 });
 
-// Recherche : titre | description | label | membre (cartes actives du tableau)
+/* --------------------------- Détail d'une carte --------------------------- */
+
+app.get('/api/cards/:id', (req, res) => {
+  const card = getCard(req.params.id);
+  if (!card) return notFound(res);
+  const comments = db.prepare(`${COMMENT_SELECT} WHERE co.card_id = ? ORDER BY co.id DESC`).all(card.id);
+  const activity = db.prepare(`${ACTIVITY_SELECT} WHERE a.card_id = ? ORDER BY a.id DESC LIMIT 100`).all(card.id);
+  res.json({ card, checklists: cardChecklists(card.id), comments, activity });
+});
+
+/* ------------------------------- Checklists ------------------------------- */
+
+function getChecklist(id) {
+  return db.prepare('SELECT * FROM checklists WHERE id = ?').get(id);
+}
+function getCheckItem(id) {
+  return db.prepare('SELECT * FROM check_items WHERE id = ?').get(id);
+}
+function cleanName(v) {
+  return typeof v === 'string' ? v.trim() : '';
+}
+
+app.post('/api/cards/:id/checklists', (req, res) => {
+  const card = getCard(req.params.id);
+  if (!card) return notFound(res);
+  const name = cleanName(req.body && req.body.name) || 'Checklist';
+  const r = db.prepare('INSERT INTO checklists (card_id, name, pos) VALUES (?,?,?)')
+    .run(card.id, name, nextPos('checklists', 'card_id', card.id));
+  const boardId = boardOfCard(card);
+  logActivity(boardId, card.id, actorId(req), 'checklist_added', `a ajouté la checklist « ${name} »`);
+  broadcast(boardId, { type: 'card', id: card.id });
+  res.status(201).json({ checklist: { ...getChecklist(r.lastInsertRowid), items: [] } });
+});
+
+app.patch('/api/checklists/:id', (req, res) => {
+  const cl = getChecklist(req.params.id);
+  if (!cl) return notFound(res);
+  const name = cleanName(req.body && req.body.name);
+  if (!name) return badReq(res, 'name requis');
+  db.prepare('UPDATE checklists SET name = ? WHERE id = ?').run(name, cl.id);
+  broadcast(boardOfCard(getCard(cl.card_id)), { type: 'card', id: cl.card_id });
+  res.json({ checklist: getChecklist(cl.id) });
+});
+
+app.delete('/api/checklists/:id', (req, res) => {
+  const cl = getChecklist(req.params.id);
+  if (!cl) return notFound(res);
+  const boardId = boardOfCard(getCard(cl.card_id));
+  db.prepare('DELETE FROM checklists WHERE id = ?').run(cl.id);
+  logActivity(boardId, cl.card_id, actorId(req), 'checklist_removed', `a supprimé la checklist « ${cl.name} »`);
+  broadcast(boardId, { type: 'card', id: cl.card_id });
+  res.json({ ok: true });
+});
+
+app.post('/api/checklists/:id/items', (req, res) => {
+  const cl = getChecklist(req.params.id);
+  if (!cl) return notFound(res);
+  const name = cleanName(req.body && req.body.name);
+  if (!name) return badReq(res, 'name requis');
+  const r = db.prepare('INSERT INTO check_items (checklist_id, name, pos) VALUES (?,?,?)')
+    .run(cl.id, name, nextPos('check_items', 'checklist_id', cl.id));
+  broadcast(boardOfCard(getCard(cl.card_id)), { type: 'card', id: cl.card_id });
+  const item = getCheckItem(r.lastInsertRowid);
+  res.status(201).json({ item: { ...item, checked: !!item.checked } });
+});
+
+app.patch('/api/checkitems/:id', (req, res) => {
+  const item = getCheckItem(req.params.id);
+  if (!item) return notFound(res);
+  const body = req.body || {};
+  const updates = [];
+  const values = [];
+  if ('name' in body) {
+    const name = cleanName(body.name);
+    if (!name) return badReq(res, 'name requis');
+    updates.push('name = ?'); values.push(name);
+  }
+  if ('checked' in body) { updates.push('checked = ?'); values.push(body.checked ? 1 : 0); }
+  if ('pos' in body && isFiniteNumber(Number(body.pos))) { updates.push('pos = ?'); values.push(Number(body.pos)); }
+  if (!updates.length) return badReq(res, 'aucun champ');
+  db.prepare(`UPDATE check_items SET ${updates.join(', ')} WHERE id = ?`).run(...values, item.id);
+  const cl = getChecklist(item.checklist_id);
+  const boardId = boardOfCard(getCard(cl.card_id));
+  if ('checked' in body && !!body.checked !== !!item.checked) {
+    logActivity(boardId, cl.card_id, actorId(req), body.checked ? 'item_checked' : 'item_unchecked',
+      body.checked ? `a terminé « ${item.name} »` : `a décoché « ${item.name} »`);
+  }
+  broadcast(boardId, { type: 'card', id: cl.card_id });
+  const fresh = getCheckItem(item.id);
+  res.json({ item: { ...fresh, checked: !!fresh.checked } });
+});
+
+app.delete('/api/checkitems/:id', (req, res) => {
+  const item = getCheckItem(req.params.id);
+  if (!item) return notFound(res);
+  const cl = getChecklist(item.checklist_id);
+  db.prepare('DELETE FROM check_items WHERE id = ?').run(item.id);
+  broadcast(boardOfCard(getCard(cl.card_id)), { type: 'card', id: cl.card_id });
+  res.json({ ok: true });
+});
+
+/* ------------------------------- Commentaires ------------------------------ */
+
+function getComment(id) {
+  return db.prepare(`${COMMENT_SELECT} WHERE co.id = ?`).get(id);
+}
+
+app.post('/api/cards/:id/comments', (req, res) => {
+  const card = getCard(req.params.id);
+  if (!card) return notFound(res);
+  const text = cleanName(req.body && req.body.text);
+  if (!text) return badReq(res, 'text requis');
+  const author = actorId(req);
+  const r = db.prepare('INSERT INTO comments (card_id, member_id, text) VALUES (?,?,?)').run(card.id, author, text);
+  const authorName = author ? db.prepare('SELECT name FROM members WHERE id = ?').get(author).name : 'Quelqu’un';
+  const mentions = mentionedMembers(text);
+  const excerpt = text.length > 80 ? text.slice(0, 79) + '…' : text;
+  for (const id of mentions) {
+    if (id === author) continue;
+    db.prepare('INSERT INTO notifications (member_id, board_id, card_id, actor_id, kind, text) VALUES (?,?,?,?,?,?)')
+      .run(id, boardOfCard(card), card.id, author, 'mention', `${authorName} vous a mentionné sur « ${card.title} » : ${excerpt}`);
+  }
+  // Les membres déjà mentionnés ne reçoivent pas une 2e notification
+  const others = db.prepare('SELECT member_id FROM card_members WHERE card_id = ?').all(card.id)
+    .map((x) => x.member_id).filter((id) => !mentions.includes(id));
+  if (others.length || mentions.length) {
+    const ins = db.prepare('INSERT INTO notifications (member_id, board_id, card_id, actor_id, kind, text) VALUES (?,?,?,?,?,?)');
+    for (const id of others) if (id !== author) ins.run(id, boardOfCard(card), card.id, author, 'comment', `${authorName} a commenté « ${card.title} » : ${excerpt}`);
+    broadcast(boardOfCard(card), { type: 'notification' });
+  }
+  broadcast(boardOfCard(card), { type: 'card', id: card.id });
+  res.status(201).json({ comment: getComment(r.lastInsertRowid) });
+});
+
+// Seul l'auteur modifie ; l'auteur ou l'administrateur (membre 1) supprime
+app.patch('/api/comments/:id', (req, res) => {
+  const co = getComment(req.params.id);
+  if (!co) return notFound(res);
+  const text = cleanName(req.body && req.body.text);
+  if (!text) return badReq(res, 'text requis');
+  if (actorId(req) !== co.member_id) return res.status(403).json({ error: 'forbidden' });
+  db.prepare("UPDATE comments SET text = ?, edited_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(text, co.id);
+  broadcast(boardOfCard(getCard(co.card_id)), { type: 'card', id: co.card_id });
+  res.json({ comment: getComment(co.id) });
+});
+
+app.delete('/api/comments/:id', (req, res) => {
+  const co = getComment(req.params.id);
+  if (!co) return notFound(res);
+  const who = actorId(req);
+  if (who !== co.member_id && who !== 1) return res.status(403).json({ error: 'forbidden' });
+  db.prepare('DELETE FROM comments WHERE id = ?').run(co.id);
+  broadcast(boardOfCard(getCard(co.card_id)), { type: 'card', id: co.card_id });
+  res.json({ ok: true });
+});
+
+/* ------------------------------ Copie de carte ----------------------------- */
+
+// Copie : titre, description, couverture, échéance ; options : étiquettes, membres, checklists
+app.post('/api/cards/:id/copy', (req, res) => {
+  const src = getCard(req.params.id);
+  if (!src) return notFound(res);
+  const body = req.body || {};
+  const target = db.prepare('SELECT * FROM lists WHERE id = ?').get(body.list_id == null ? src.list_id : Number(body.list_id));
+  if (!target) return notFound(res);
+  const title = cleanName(body.title) || src.title;
+  const keep = { labels: true, members: true, checklists: true, ...(body.keep || {}) };
+  const author = actorId(req);
+  const copy = db.transaction(() => {
+    let pos;
+    if (target.id === src.list_id) { // juste sous l'original
+      const next = db.prepare('SELECT MIN(pos) AS p FROM cards WHERE list_id = ? AND archived = 0 AND pos > ?').get(src.list_id, src.pos).p;
+      pos = next == null ? src.pos + 100 : (src.pos + next) / 2;
+    } else {
+      pos = nextPos('cards', 'list_id', target.id);
+    }
+    const r = db.prepare(`INSERT INTO cards (list_id, title, description, pos, cover, due_at, due_complete, created_by)
+      VALUES (?,?,?,?,?,?,?,?)`).run(target.id, title, src.description, pos, src.cover, src.due_at, src.due_complete, author);
+    const id = r.lastInsertRowid;
+    if (keep.labels) db.prepare('INSERT INTO card_labels (card_id, label_id) SELECT ?, label_id FROM card_labels WHERE card_id = ?').run(id, src.id);
+    if (keep.members) db.prepare('INSERT INTO card_members (card_id, member_id) SELECT ?, member_id FROM card_members WHERE card_id = ?').run(id, src.id);
+    if (keep.checklists) {
+      for (const cl of cardChecklists(src.id)) {
+        const c = db.prepare('INSERT INTO checklists (card_id, name, pos) VALUES (?,?,?)').run(id, cl.name, cl.pos);
+        const ins = db.prepare('INSERT INTO check_items (checklist_id, name, pos, checked) VALUES (?,?,?,?)');
+        for (const it of cl.items) ins.run(c.lastInsertRowid, it.name, it.pos, it.checked ? 1 : 0);
+      }
+    }
+    logActivity(target.board_id, id, author, 'card_copied', `a copié cette carte depuis « ${src.title} »`);
+    return id;
+  })();
+  broadcast(target.board_id, { type: 'card', id: copy });
+  res.status(201).json({ card: getCard(copy) });
+});
+
+/* ------------------------------ Notifications ------------------------------ */
+
+app.get('/api/members/:id/notifications', (req, res) => {
+  const member = db.prepare('SELECT id FROM members WHERE id = ?').get(req.params.id);
+  if (!member) return notFound(res);
+  const rows = db.prepare(`
+    SELECT n.id, n.board_id, n.card_id, n.kind, n.text, n.read, n.created_at, n.actor_id,
+           m.initials AS actor_initials, m.color AS actor_color
+    FROM notifications n LEFT JOIN members m ON m.id = n.actor_id
+    WHERE n.member_id = ? ORDER BY n.id DESC LIMIT 30`).all(member.id).map((n) => ({ ...n, read: !!n.read }));
+  const unread = db.prepare('SELECT COUNT(*) AS n FROM notifications WHERE member_id = ? AND read = 0').get(member.id).n;
+  res.json({ unread, notifications: rows });
+});
+
+// Marque lues : toutes, ou seulement les ids fournis
+app.post('/api/members/:id/notifications/read', (req, res) => {
+  const member = db.prepare('SELECT id FROM members WHERE id = ?').get(req.params.id);
+  if (!member) return notFound(res);
+  const ids = Array.isArray(req.body && req.body.ids) ? req.body.ids.map(Number).filter(Number.isInteger) : null;
+  if (ids && ids.length) {
+    const stmt = db.prepare('UPDATE notifications SET read = 1 WHERE member_id = ? AND id = ?');
+    db.transaction(() => { for (const id of ids) stmt.run(member.id, id); })();
+  } else {
+    db.prepare('UPDATE notifications SET read = 1 WHERE member_id = ?').run(member.id);
+  }
+  const unread = db.prepare('SELECT COUNT(*) AS n FROM notifications WHERE member_id = ? AND read = 0').get(member.id).n;
+  res.json({ unread });
+});
+
+/* ------------------------------ Activité tableau --------------------------- */
+
+app.get('/api/board/:id/activity', (req, res) => {
+  const board = getBoard(req.params.id);
+  if (!board) return notFound(res);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+  const rows = db.prepare(`${ACTIVITY_SELECT} WHERE a.board_id = ? ORDER BY a.id DESC LIMIT ?`).all(board.id, limit);
+  res.json({ activity: rows });
+});
+
+// Recherche : titre | description | label | membre | commentaire | élément de checklist (cartes actives du tableau)
 app.get('/api/board/:id/search', (req, res) => {
   const board = getBoard(req.params.id);
   if (!board) return notFound(res);
@@ -305,9 +650,12 @@ app.get('/api/board/:id/search', (req, res) => {
     LEFT JOIN card_members cm ON cm.card_id = c.id
     LEFT JOIN members me ON me.id = cm.member_id
     WHERE l.board_id = ? AND c.archived = 0
-      AND (c.title LIKE ? OR c.description LIKE ? OR la.name LIKE ? OR me.name LIKE ? OR me.initials LIKE ?)
+      AND (c.title LIKE ? OR c.description LIKE ? OR la.name LIKE ? OR me.name LIKE ? OR me.initials LIKE ?
+        OR EXISTS (SELECT 1 FROM comments co WHERE co.card_id = c.id AND co.text LIKE ?)
+        OR EXISTS (SELECT 1 FROM checklists ck JOIN check_items ci ON ci.checklist_id = ck.id
+                   WHERE ck.card_id = c.id AND ci.name LIKE ?))
     ORDER BY c.pos LIMIT 100`).all(
-    board.id, like, like, like, like, like
+    board.id, like, like, like, like, like, like, like
   );
   res.json({ results: rows });
 });

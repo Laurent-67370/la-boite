@@ -4,12 +4,15 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 
 ![La Boîte — vue mobile](docs/capture-mobile.png)
 
-## Fonctionnalités (v1.0.0)
+## Fonctionnalités (v1.1.0)
 
 - **Board** : listes avec compte de cartes et **jeton de limite WIP** (`2/10` — vert, orange, rouge selon le seuil), repli d'une liste (⤢)
 - **Cartes** : titre, description (badge 📝), **couverture colorée**, **échéance** (badge orange/rouge si passée, vert si terminée ✓), **étiquettes** (chips colorées, nom au survol), **membres** (initiales colorées)
+- **Checklists** (progression + badge `☑ 2/5`), **commentaires** (badge `💬`, mentions `@Prénom`), **journal d'activité** par carte et par tableau
+- **Notifications 🔔** : commentaires, mentions, assignations, déplacements — compteur non lus en temps réel
+- **Fonds du tableau** (préréglages maison) et **copie de carte** (liste cible, checklists / étiquettes / membres au choix)
 - **Glisser-déposer** : cartes entre listes, réordonnancement de cartes ET de listes (positions réelles)
-- **Recherche / filtre** : titre, description, étiquette, membre, échéance
+- **Recherche / filtre** : titre, description, étiquette, membre, commentaire, élément de checklist, échéance
 - **Corbeille** : archivage + restauration
 - **Temps réel** : SSE (`/api/board/:id/events`) — une carte créée sur un onglet apparaît instantanément sur les autres, sans rechargement
 - **PWA installable** (manifest + service worker, mise hors-ligne des fichiers statiques) + **mode sombre**
@@ -33,7 +36,8 @@ Variables :
 ## Tests
 
 ```bash
-npm test     # 26 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, 404)
+npm test     # 41 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
+CHROMIUM_PATH=/chemin/vers/chrome npm test   # si le Chromium de Playwright n'est pas installé
 node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page
 ```
 
@@ -43,14 +47,23 @@ node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page
 |---|---|
 | `GET /api/health` | état du service |
 | `GET /api/board/:id` | board complet (listes, cartes, étiquettes, membres) |
-| `POST /api/boards` · `PATCH /api/boards/:id` | créer / renommer |
+| `POST /api/boards` · `PATCH /api/boards/:id` | créer / renommer / changer le fond (`background` ∈ préréglages) |
 | `POST /api/lists` · `PATCH/DELETE /api/lists/:id` | listes (nom, position, WIP, repli) |
 | `POST /api/cards` · `PATCH/DELETE /api/cards/:id` | cartes (titre, description, échéance, couverture…) |
 | `POST /api/cards/:id/move` | déplacement / réordonnancement |
 | `POST /api/cards/:id/labels` · `/members` | rattacher / retirer |
 | `POST /api/cards/:id/unarchive` | restaurer depuis la corbeille |
+| `GET /api/cards/:id` | détail : checklists, commentaires, activité |
+| `POST /api/cards/:id/checklists` · `PATCH/DELETE /api/checklists/:id` | checklists |
+| `POST /api/checklists/:id/items` · `PATCH/DELETE /api/checkitems/:id` | éléments (nom, coché, position) |
+| `POST /api/cards/:id/comments` · `PATCH/DELETE /api/comments/:id` | commentaires |
+| `POST /api/cards/:id/copy` | copier une carte |
+| `GET /api/board/:id/activity` | journal d'activité du tableau |
+| `GET /api/members/:id/notifications` · `POST …/notifications/read` | notifications 🔔 |
 | `GET /api/board/:id/search?q=` | recherche |
 | `GET /api/board/:id/events` | flux SSE temps réel |
+
+L'auteur d'une action est transmis par l'en-tête `X-Member-Id` (sélecteur d'utilisateur de l'interface).
 
 ## Déploiement (VPS)
 

@@ -21,6 +21,7 @@
       <div class="search-wrap">
         <input id="search-input" type="search" placeholder="Rechercher (titre, description, étiquette, membre)" aria-label="Recherche">
       </div>
+      <button id="btn-notif" class="btn btn-ghost notif-btn" type="button" title="Notifications" aria-label="Notifications">🔔<span class="notif-count" id="notif-count" hidden>0</span></button>
       <button id="btn-add-list" class="btn btn-ghost" type="button" title="Ajouter une liste">+ Liste</button>
     </div>
   </header>
@@ -57,11 +58,22 @@
       </div>
       <button id="filter-clear" class="btn btn-light" type="button">Réinitialiser</button>
     </div>
+    <div class="popover popover-notif" id="popover-notif" hidden>
+      <div class="popover-title-row">
+        <div class="popover-title">Notifications</div>
+        <button id="notif-read-all" class="btn btn-light btn-sm" type="button">Tout marquer comme lu</button>
+      </div>
+      <ol id="notif-list" class="notif-list"></ol>
+    </div>
     <div class="popover" id="popover-menu" hidden>
       <div class="popover-title">La Boîte</div>
       <div id="menu-stats" class="menu-stats"></div>
+      <div class="filter-heading">Fond du tableau</div>
+      <div id="menu-backgrounds" class="bg-row"></div>
       <div class="filter-heading">Corbeille</div>
       <div id="menu-trash" class="menu-trash"><em id="trash-empty">La corbeille est vide.</em></div>
+      <div class="filter-heading">Activité</div>
+      <ol id="menu-activity" class="feed feed-compact"></ol>
       <div class="menu-foot">Application originale — pas d’affiliation.</div>
     </div>
   </div>
@@ -106,9 +118,46 @@
           <div class="modal-heading">Couverture</div>
           <div id="modal-covers" class="cover-row"></div>
         </div>
-        <div class="modal-foot" id="modal-foot" hidden>
-          <button id="modal-archive" class="btn btn-danger" type="button">Archiver la carte</button>
+        <div class="modal-block">
+          <div class="modal-heading-row">
+            <div class="modal-heading">Checklists</div>
+            <button id="modal-add-checklist" class="btn btn-light btn-sm" type="button">+ Checklist</button>
+          </div>
+          <div id="modal-checklists" class="checklists"></div>
         </div>
+        <div class="modal-block">
+          <div class="modal-heading-row">
+            <div class="modal-heading">Commentaires et activité</div>
+            <button id="modal-activity-toggle" class="btn btn-light btn-sm" type="button" aria-pressed="false">Afficher les détails</button>
+          </div>
+          <div class="comment-composer">
+            <span class="member-avatar comment-avatar" id="modal-comment-avatar"></span>
+            <div class="comment-box">
+              <textarea id="modal-comment-input" rows="2" placeholder="Écrire un commentaire…" aria-label="Nouveau commentaire"></textarea>
+              <button id="modal-comment-save" class="btn btn-primary btn-sm" type="button" disabled>Enregistrer</button>
+            </div>
+          </div>
+          <ol id="modal-feed" class="feed" aria-label="Commentaires et activité"></ol>
+        </div>
+        <div class="modal-foot" id="modal-foot">
+          <button id="modal-copy" class="btn btn-light" type="button">Copier la carte</button>
+          <button id="modal-archive" class="btn btn-danger" type="button" hidden>Archiver la carte</button>
+        </div>
+        <form class="copy-panel" id="modal-copy-panel" hidden>
+          <div class="modal-heading">Copier la carte</div>
+          <label class="copy-field">Titre <input id="copy-title" type="text" autocomplete="off"></label>
+          <label class="copy-field">Liste <select id="copy-list"></select></label>
+          <fieldset class="copy-keep">
+            <legend>Conserver…</legend>
+            <label><input type="checkbox" id="copy-keep-checklists" checked> Checklists</label>
+            <label><input type="checkbox" id="copy-keep-labels" checked> Étiquettes</label>
+            <label><input type="checkbox" id="copy-keep-members" checked> Membres</label>
+          </fieldset>
+          <div class="composer-row">
+            <button id="copy-submit" class="btn btn-primary" type="submit">Créer la copie</button>
+            <button id="copy-cancel" class="btn btn-ghost-dark" type="button">Annuler</button>
+          </div>
+        </form>
       </div>
     </section>
   </div>
