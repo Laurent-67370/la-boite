@@ -3,3 +3,7 @@ data.db*
 la-boite-*.png
 recon/raw/
 *.log
+recon/
+qc-*.png
+la-boite-*.png
+hermes-*
