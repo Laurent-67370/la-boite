@@ -1,0 +1,3567 @@
+{
+ "capture": {
+  "target_url": "https://trello.com/b/WHOzj88m",
+  "scripts_observed": 34,
+  "scripts_analyzed": 34,
+  "source_artifacts": [
+   {
+    "sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+    "bytes": 1431773,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "e86473ccc8ae11228501eb56774f1bab10add038965c860e5c551d03a5435e5d",
+    "bytes": 160660,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "275482d04ae90ea0f00bab867b027211e60df78b9dee7294a1dbf63ac5a2e831",
+    "bytes": 13295,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "69357096140f6079d54649f3b42c969d6f201ad677d167fcc32d546c9f93bcd4",
+    "bytes": 1033,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "b091b02b3beac6ba15ba6d0b33c855e44d3c76b781b6858a46845a12546d80ed",
+    "bytes": 1694725,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "fcbd05036d7543e7fd1df2d4dcf135dcdd8bb65c3031a7457f7df0c62b248535",
+    "bytes": 12820,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "967ab1cd4d868ec72a7db27c0686cfd479e52d150f86c0696e3e48a483ef28bd",
+    "bytes": 296688,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "ad92ec9eb7a86ff9e7037882822a7bf631664491f8f973739012e756ced65bf5",
+    "bytes": 15126,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "8528803dedcbc0fcacc60379ccea0fba27d25fa70876cf5d5760929c4dc599bb",
+    "bytes": 276666,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+    "bytes": 1901968,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "55f7b2e11673731f678ffe29b9c1953abec1933a4bb22114fdeacda88d2a504a",
+    "bytes": 53401,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "32423450d2a1cb210f9585343eeff0e9aa371f19f8a55320f7b047995c610f6a",
+    "bytes": 168719,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "972dcdbd2f2f772445a98e1f29d3963d2a5905b17317d9fe10bcfc8eb52af301",
+    "bytes": 21311,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "984756beda0ddc706f956298b76a3eb8f447b0612bf34cbbda9ad1e9ec66a2a6",
+    "bytes": 900001,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "29070df6cc245d65b0d0750117303b0df3c55c9a99f5f869a844a3dfd83df01d",
+    "bytes": 2399,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "b3937c2e0b52e06b7c15a32bdf3728920c38fef5185e79f29f4a3e1a0168a3c3",
+    "bytes": 2510,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "0b917c3a26f0db1a87c753c00d7655d5f4728864158b2440369c920f7d49aeeb",
+    "bytes": 188672,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "167caefb41beb2a7afc6e22236e1572b6e905e69b6563b65ef9f32431a5fc9d0",
+    "bytes": 126672,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "7fa154294384ca2782852c9221532fededca7e749b1482f738e917c7cf24e3e7",
+    "bytes": 16,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "6c8199b3178eb670c07a75c0f6501016ea55836d8a950e760389bc1dfad954da",
+    "bytes": 678,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "d03080bcda3c86b8509723e57731bdd460245097686258e6be31aa86a2044085",
+    "bytes": 33578,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "1f713a9da5422194d7a86654aab11aacb7cd98430906b78a4ffd4441714ee324",
+    "bytes": 10364,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "15addc9774861a75db641592aa0728c265f2449aeb93374106c371b2e378fac4",
+    "bytes": 191,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "286d5586e791e859072150afec4e3711a69fba019a5d228375355a55dc8c1a44",
+    "bytes": 2062,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "cac79d0417d43be3510dd9f650ddcc76b410dcc68b6f2daae885a2f873cb9d9c",
+    "bytes": 130561,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+    "bytes": 1077797,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "f6c7c753620dcbe6eddf4fc0177266cc22e32aed3ff1de42c361c99e7865149f",
+    "bytes": 24904,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "7197361679ae050a310261430498cb4cd51ddd4ecdec3b9853ee95f285c473e6",
+    "bytes": 144842,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "52809c7f04e7e87f107a78ecac679fd3c19a2b2440f3a619c2628b4ad0511b7b",
+    "bytes": 21258,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "01b6f5a623280bdf8f03380824d19568d35dab9ff49edc61982f0ebbf3606fe1",
+    "bytes": 23104,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "8cae3f5d9e3a4e10700420cc5a307ff0b34b5d996751e74fabe22c3b757888dc",
+    "bytes": 3509,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+    "bytes": 1011069,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "1f0e8eb8938e9e380e4e1bf4e12cc470a3fb4de8d46fe6f1fc85e761b8cc1770",
+    "bytes": 117377,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   },
+   {
+    "sha256": "0b5d057c3da1d903f3cdea13e2bddab51b036f6529a9701bd46936e03059f497",
+    "bytes": 39396,
+    "media_type": "text/javascript",
+    "charset": "utf-8",
+    "text_available": true
+   }
+  ]
+ },
+ "observations": {
+  "chunks": {
+   "nodes": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "url": "https://trello.com/assets/app.9cdfc1f63d9351d53232.js",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "bytes": 1431773
+    },
+    {
+     "script_key": "scr_059fc28d75268ddb4c7401681bab442a1e5600f2a35518425819416338a4adc2",
+     "url": "https://trello.com/assets/@atlaskit-internal_media-card-with-media-client.2144e9bc803e39b550d9.js",
+     "artifact_sha256": "e86473ccc8ae11228501eb56774f1bab10add038965c860e5c551d03a5435e5d",
+     "bytes": 160660
+    },
+    {
+     "script_key": "scr_0ac1a3111eba5803861212287b403cb288482d6c0aa22b70345c63d8fa4d1319",
+     "url": "https://trello.com/assets/ai-board-loading-gradient.60591e258ea731011af7.js",
+     "artifact_sha256": "275482d04ae90ea0f00bab867b027211e60df78b9dee7294a1dbf63ac5a2e831",
+     "bytes": 13295
+    },
+    {
+     "script_key": "scr_1386d4fd98de526fc44d3b149c57ab497a960289c36089be78dd2150472c5303",
+     "url": "https://trello.com/assets/@atlaskit-internal_atlassian-spacing.d470f4bbbf29e2ae75b3.js",
+     "artifact_sha256": "69357096140f6079d54649f3b42c969d6f201ad677d167fcc32d546c9f93bcd4",
+     "bytes": 1033
+    },
+    {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "url": "https://trello.com/assets/trello-renderer.cbb2ceb7be9c441c6d87.js",
+     "artifact_sha256": "b091b02b3beac6ba15ba6d0b33c855e44d3c76b781b6858a46845a12546d80ed",
+     "bytes": 1694725
+    },
+    {
+     "script_key": "scr_30f07546daafdfd710534f9ac9dd3140e5400a657702a3b088bbb278fe43012c",
+     "url": "https://trello.com/assets/@atlaskit-internal_atlassian-motion.44f07f5f762f17608b81.js",
+     "artifact_sha256": "fcbd05036d7543e7fd1df2d4dcf135dcdd8bb65c3031a7457f7df0c62b248535",
+     "bytes": 12820
+    },
+    {
+     "script_key": "scr_331b1b0211f04ac98b2d4866e94565cbe6e826c3c04a371d9700db687cc853ab",
+     "url": "https://trello.com/assets/@atlaskit-internal_renderer-node_Media.adce1a3ddc58b5e32969.js",
+     "artifact_sha256": "967ab1cd4d868ec72a7db27c0686cfd479e52d150f86c0696e3e48a483ef28bd",
+     "bytes": 296688
+    },
+    {
+     "script_key": "scr_3affc4e3cf6ace6bf1775ec240f35a5bedc5cbc5d3e42b9e72fbd6c8578f229a",
+     "url": "https://trello.com/assets/accessibility-menu.84d3400019f32ccfafcc.js",
+     "artifact_sha256": "ad92ec9eb7a86ff9e7037882822a7bf631664491f8f973739012e756ced65bf5",
+     "bytes": 15126
+    },
+    {
+     "script_key": "scr_4a5c90975dd3faad2f46be6fdc898f96da42fb171f5260866baa034a2f2abe70",
+     "url": "https://trello.com/assets/browser-storage-message.c813ccb494b0bc9d0729.js",
+     "artifact_sha256": "8528803dedcbc0fcacc60379ccea0fba27d25fa70876cf5d5760929c4dc599bb",
+     "bytes": 276666
+    },
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "url": "https://trello.com/assets/ltp.9929ac2a1e2b5074fa5e.js",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "bytes": 1901968
+    },
+    {
+     "script_key": "scr_59d26565cbbcfe2bede7aa93b0e22ddb04eea2cb1b7bac8ba9fc8b600d5e6a33",
+     "url": "https://trello.com/assets/messages.f45db25bbec2da2c1710.js",
+     "artifact_sha256": "55f7b2e11673731f678ffe29b9c1953abec1933a4bb22114fdeacda88d2a504a",
+     "bytes": 53401
+    },
+    {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "url": "https://trello.com/assets/smart-schedule-onboarding-manager.a237fec10439408df515.js",
+     "artifact_sha256": "32423450d2a1cb210f9585343eeff0e9aa371f19f8a55320f7b047995c610f6a",
+     "bytes": 168719
+    },
+    {
+     "script_key": "scr_6b4c4980c8faf6afd2962ed993700639ab3249bbc5cfd56539074a64729135b0",
+     "url": "https://trello.com/assets/@atlaskit-internal_atlassian-dark.9d53369cd82e627cb64b.js",
+     "artifact_sha256": "972dcdbd2f2f772445a98e1f29d3963d2a5905b17317d9fe10bcfc8eb52af301",
+     "bytes": 21311
+    },
+    {
+     "script_key": "scr_87827d147b2e9c925f60297c966c5ec3abad6bb8ffde253887ee23615556f32d",
+     "url": "https://trello.com/assets/locale.en-US.f6afeff0a6ce62fee615.js",
+     "artifact_sha256": "984756beda0ddc706f956298b76a3eb8f447b0612bf34cbbda9ad1e9ec66a2a6",
+     "bytes": 900001
+    },
+    {
+     "script_key": "scr_8aba7a174f376e69aeccdd824c8c9a38d9eb6f44a35aab5a60ab45fab1a3ea84",
+     "url": "https://trello.com/assets/bootstrap.d83ba3ec9e5b9392aa72.js",
+     "artifact_sha256": "29070df6cc245d65b0d0750117303b0df3c55c9a99f5f869a844a3dfd83df01d",
+     "bytes": 2399
+    },
+    {
+     "script_key": "scr_8f1c92cd9e2543f51634fb40f0a97e4441a4717b8bc941d61ad785ef5653a00a",
+     "url": "https://trello.com/assets/skip-navigation.120975ff273d26d2d9d0.js",
+     "artifact_sha256": "b3937c2e0b52e06b7c15a32bdf3728920c38fef5185e79f29f4a3e1a0168a3c3",
+     "bytes": 2510
+    },
+    {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "url": "https://trello.com/assets/ai-board-builder-command-center.837b4039d2936eb03531.js",
+     "artifact_sha256": "0b917c3a26f0db1a87c753c00d7655d5f4728864158b2440369c920f7d49aeeb",
+     "bytes": 188672
+    },
+    {
+     "script_key": "scr_9973fa838f9f8ffaae46f5a0e7317a42e73ee34b87494ef80000ac9348100d2a",
+     "url": "https://trello.com/assets/logged-out-header.ac5b8e1f5e926c749426.js",
+     "artifact_sha256": "167caefb41beb2a7afc6e22236e1572b6e905e69b6563b65ef9f32431a5fc9d0",
+     "bytes": 126672
+    },
+    {
+     "script_key": "scr_9a599448c672905e78ce600ef315f067dbf8abfec0602aedacaaf5d25313dea1",
+     "url": "https://trello.com/b/WHOzj88m",
+     "artifact_sha256": "7fa154294384ca2782852c9221532fededca7e749b1482f738e917c7cf24e3e7",
+     "bytes": 16
+    },
+    {
+     "script_key": "scr_9bd65e93df1777d859d1877246f5b2257dc6196b3f2a7fe6124fea39a5044ec9",
+     "url": "https://trello.com/assets/@atlaskit-internal_atlassian-shape.2ecb5b06dc8f1dfeabd0.js",
+     "artifact_sha256": "6c8199b3178eb670c07a75c0f6501016ea55836d8a950e760389bc1dfad954da",
+     "bytes": 678
+    },
+    {
+     "script_key": "scr_a964d4334d9aea4a9a248650d13ea421e6633033cc427d25868d12996c58e776",
+     "url": "https://trello.com/assets/quickload.e417dd5dfe88a0e20232.js",
+     "artifact_sha256": "d03080bcda3c86b8509723e57731bdd460245097686258e6be31aa86a2044085",
+     "bytes": 33578
+    },
+    {
+     "script_key": "scr_ac6c596203d3523667308336eebd722578044f531c652ce3080a38f6a3b7d799",
+     "url": "https://trello.com/assets/@atlaskit-internal_renderer-node_MediaSingle.ea529dd1f4223200b44f.js",
+     "artifact_sha256": "1f713a9da5422194d7a86654aab11aacb7cd98430906b78a4ffd4441714ee324",
+     "bytes": 10364
+    },
+    {
+     "script_key": "scr_ae75275f775130e4cdc3f9e9087f827ffe4e3ae8996bcd1d437f611549a9a4fe",
+     "url": "https://trello.com/b/WHOzj88m",
+     "artifact_sha256": "15addc9774861a75db641592aa0728c265f2449aeb93374106c371b2e378fac4",
+     "bytes": 191
+    },
+    {
+     "script_key": "scr_aee29fa1f4d829369f032f9c91cd4d3b81342d2231ab9396de8abbf22cf7c04f",
+     "url": "https://trello.com/assets/discovery-ad-popper-container.745ad196244bc62098b8.js",
+     "artifact_sha256": "286d5586e791e859072150afec4e3711a69fba019a5d228375355a55dc8c1a44",
+     "bytes": 2062
+    },
+    {
+     "script_key": "scr_b1bf8d1788d089bfe8d7ba8f9b81f37d1b05702c6ae518bdf7dcc9968d057290",
+     "url": "https://trello.com/assets/about-this-board-content.c710e174d920f430e2e0.js",
+     "artifact_sha256": "cac79d0417d43be3510dd9f650ddcc76b410dcc68b6f2daae885a2f873cb9d9c",
+     "bytes": 130561
+    },
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "url": "https://trello.com/assets/board-list-view.0ae8a0ba84d4fe7b8beb.js",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "bytes": 1077797
+    },
+    {
+     "script_key": "scr_c4cab4ed6dcb98f98762a8ca2c661650b262c421730f260af366430cee961435",
+     "url": "https://trello.com/assets/card-composer.93397532ff28b9ab7c69.js",
+     "artifact_sha256": "f6c7c753620dcbe6eddf4fc0177266cc22e32aed3ff1de42c361c99e7865149f",
+     "bytes": 24904
+    },
+    {
+     "script_key": "scr_d165a38b124fda1ce1ce85c8010350a7ec6085630c9e8d1714a871ea0f4efe24",
+     "url": "https://trello.com/b/WHOzj88m",
+     "artifact_sha256": "7197361679ae050a310261430498cb4cd51ddd4ecdec3b9853ee95f285c473e6",
+     "bytes": 144842
+    },
+    {
+     "script_key": "scr_d2a08982941fcdca0fe172ac718c014f94daf9286c95f8209a10a2bc4c1d7b36",
+     "url": "https://trello.com/assets/@atlaskit-internal_atlassian-light.dab928d19f6cdac7ebaf.js",
+     "artifact_sha256": "52809c7f04e7e87f107a78ecac679fd3c19a2b2440f3a619c2628b4ad0511b7b",
+     "bytes": 21258
+    },
+    {
+     "script_key": "scr_dde5acf0677c9fb6d8f877c0f5131ee08b897abdfff36323d304e907f996e123",
+     "url": "https://trello.com/assets/web-vitals.2ceebd827fe5d2817786.js",
+     "artifact_sha256": "01b6f5a623280bdf8f03380824d19568d35dab9ff49edc61982f0ebbf3606fe1",
+     "bytes": 23104
+    },
+    {
+     "script_key": "scr_e3055aabe9d6acd55a105e66030d7c82e2558ee00abacf69dd2ce9e153f9fbd1",
+     "url": "https://trello.com/assets/@atlaskit-internal_atlassian-typography.1454d765628ab5353e9e.js",
+     "artifact_sha256": "8cae3f5d9e3a4e10700420cc5a307ff0b34b5d996751e74fabe22c3b757888dc",
+     "bytes": 3509
+    },
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "url": "https://trello.com/assets/board-route.c5d1f535923b4e7b2dfd.js",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "bytes": 1011069
+    },
+    {
+     "script_key": "scr_e96ddf0b182ae1820e857af4180417ed65cf417b6cc1f302d52b0df9d8f23c28",
+     "url": "https://trello.com/assets/atlaskit-editor-messages-en.8822f8a09afe87c413fa.js",
+     "artifact_sha256": "1f0e8eb8938e9e380e4e1bf4e12cc470a3fb4de8d46fe6f1fc85e761b8cc1770",
+     "bytes": 117377
+    },
+    {
+     "script_key": "scr_ecad0fe55a4fdae2843142bcb4e309149250ca598ee86d7bdabc106546f2cdea",
+     "url": "https://trello.com/assets/atlaskit-logo.29be826de0d53e87f7fe.js",
+     "artifact_sha256": "0b5d057c3da1d903f3cdea13e2bddab51b036f6529a9701bd46936e03059f497",
+     "bytes": 39396
+    }
+   ],
+   "edges": [
+    {
+     "from_script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "kind": "require",
+     "specifier": "util",
+     "resolved_url": null,
+     "location": {
+      "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+      "line": 21,
+      "column": 707162
+     }
+    },
+    {
+     "from_script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "kind": "require",
+     "specifier": "util",
+     "resolved_url": null,
+     "location": {
+      "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+      "line": 1,
+      "column": 112235
+     }
+    }
+   ]
+  },
+  "routes": [
+   {
+    "value": "/",
+    "mechanism": "property:path",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 23598
+    }
+   },
+   {
+    "value": "/",
+    "mechanism": "property:path",
+    "location": {
+     "script_key": "scr_4a5c90975dd3faad2f46be6fdc898f96da42fb171f5260866baa034a2f2abe70",
+     "line": 17,
+     "column": 167932
+    }
+   },
+   {
+    "value": "/",
+    "mechanism": "property:path",
+    "location": {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "line": 1,
+     "column": 431806
+    }
+   },
+   {
+    "value": "",
+    "mechanism": "property:path",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 320900
+    }
+   }
+  ],
+  "endpoints": [
+   {
+    "value": "TrelloBoardObjectIdByShortLink",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1540,
+     "column": 7305
+    }
+   },
+   {
+    "value": "EndOfTrialFrictionOrganization",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1540,
+     "column": 32014
+    }
+   },
+   {
+    "value": "TrelloMarkInboxNotificationsRead",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1540,
+     "column": 39013
+    }
+   },
+   {
+    "value": "ReadNotifications",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1540,
+     "column": 45750
+    }
+   },
+   {
+    "value": "MemberEmail",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1540,
+     "column": 78951
+    }
+   },
+   {
+    "value": "DesktopNotificationBoard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1540,
+     "column": 104904
+    }
+   },
+   {
+    "value": "DesktopNotificationCard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1540,
+     "column": 105689
+    }
+   },
+   {
+    "value": "DesktopNotificationOrganization",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1540,
+     "column": 106480
+    }
+   },
+   {
+    "value": "DesktopStarredBoardsList",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1540,
+     "column": 107318
+    }
+   },
+   {
+    "value": "DesktopUrlsMember",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1540,
+     "column": 109106
+    }
+   },
+   {
+    "value": "SetReadNotifications",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1607,
+     "column": 8097
+    }
+   },
+   {
+    "value": "TrelloAgentSessionUpdated",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1607,
+     "column": 24914
+    }
+   },
+   {
+    "value": "TrelloBoardUpdatedAttachments",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1607,
+     "column": 27676
+    }
+   },
+   {
+    "value": "TrelloBoardUpdated",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1607,
+     "column": 37390
+    }
+   },
+   {
+    "value": "TrelloMemberUpdated",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1607,
+     "column": 47841
+    }
+   },
+   {
+    "value": "TrelloWorkspaceUpdated",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1607,
+     "column": 54912
+    }
+   },
+   {
+    "value": "TrelloOnlineLabsPreferences",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1607,
+     "column": 56506
+    }
+   },
+   {
+    "value": "OrganizationContextData",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1607,
+     "column": 58222
+    }
+   },
+   {
+    "value": "EnterpriseContextData",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1607,
+     "column": 59137
+    }
+   },
+   {
+    "value": "MemberLocalePref",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 357
+    }
+   },
+   {
+    "value": "AddMessageDismissed",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 76355
+    }
+   },
+   {
+    "value": "AddOneTimeMessageDismissed",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 80733
+    }
+   },
+   {
+    "value": "MyEnterprise",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 82746
+    }
+   },
+   {
+    "value": "WouldPushWorkspaceOverLimit",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 88003
+    }
+   },
+   {
+    "value": "EntitlementFreeTrialDetails",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 94091
+    }
+   },
+   {
+    "value": "TrelloWorkspacePlaceOrderLink",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 96953
+    }
+   },
+   {
+    "value": "EntitlementsFreeTrialDetails",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 104892
+    }
+   },
+   {
+    "value": "OrganizationsFreeTrialDetails",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 107680
+    }
+   },
+   {
+    "value": "OrganizationFreeTrialDetails",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 122156
+    }
+   },
+   {
+    "value": "BoardBackground",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1615,
+     "column": 177115
+    }
+   },
+   {
+    "value": "BoardActionsId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1634,
+     "column": 1622
+    }
+   },
+   {
+    "value": "CardActionsId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1634,
+     "column": 3303
+    }
+   },
+   {
+    "value": "BoardOpenCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 44918
+    }
+   },
+   {
+    "value": "BoardClosedCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 45857
+    }
+   },
+   {
+    "value": "BoardVisibleCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 46801
+    }
+   },
+   {
+    "value": "MemberOpenCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 47687
+    }
+   },
+   {
+    "value": "MemberClosedCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 48628
+    }
+   },
+   {
+    "value": "MemberVisibleCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 49574
+    }
+   },
+   {
+    "value": "BoardCardsPatcher",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 54194
+    }
+   },
+   {
+    "value": "BoardLabelsPatcher",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 56546
+    }
+   },
+   {
+    "value": "BoardListsPatcher",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 58250
+    }
+   },
+   {
+    "value": "CardChecklistsPatcher",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 60278
+    }
+   },
+   {
+    "value": "ChecklistCheckItemsPatcher",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 61702
+    }
+   },
+   {
+    "value": "MemberBoardsPatcher",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 65175
+    }
+   },
+   {
+    "value": "MemberCardsPatcher",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 68185
+    }
+   },
+   {
+    "value": "OrganizationBoardsPatcher",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1847,
+     "column": 70423
+    }
+   },
+   {
+    "value": "TrelloBoardId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1883,
+     "column": 4124
+    }
+   },
+   {
+    "value": "TrelloMemberId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1883,
+     "column": 5156
+    }
+   },
+   {
+    "value": "TrelloWorkspaceId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1883,
+     "column": 6196
+    }
+   },
+   {
+    "value": "WorkspaceType",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 82686
+    }
+   },
+   {
+    "value": "TrelloMemberBoards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 90042
+    }
+   },
+   {
+    "value": "TrelloCurrentBoardInfo",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 93217
+    }
+   },
+   {
+    "value": "TrelloCurrentBoardListsCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 97491
+    }
+   },
+   {
+    "value": "TrelloBoardMirrorCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 98292
+    }
+   },
+   {
+    "value": "TrelloPreloadCard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 102981
+    }
+   },
+   {
+    "value": "MemberBoards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 107055
+    }
+   },
+   {
+    "value": "MemberHeader",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 114961
+    }
+   },
+   {
+    "value": "MemberQuickBoards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 131326
+    }
+   },
+   {
+    "value": "OrganizationBillingPage",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 134276
+    }
+   },
+   {
+    "value": "WorkspaceBoardsPageMinimal",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 183559
+    }
+   },
+   {
+    "value": "WorkspaceHomePageMinimal",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 195386
+    }
+   },
+   {
+    "value": "CurrentBoardInfo",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 238504
+    }
+   },
+   {
+    "value": "CurrentBoardListsCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 258287
+    }
+   },
+   {
+    "value": "PreloadCard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1995,
+     "column": 271038
+    }
+   },
+   {
+    "value": "WorkspaceForBoard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1998,
+     "column": 35576
+    }
+   },
+   {
+    "value": "WorkspaceForCard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1998,
+     "column": 36374
+    }
+   },
+   {
+    "value": "WorkspaceForOrganization",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1998,
+     "column": 37358
+    }
+   },
+   {
+    "value": "WorkspaceForOrganizationView",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "line": 1998,
+     "column": 38109
+    }
+   },
+   {
+    "value": "MemberAtlassianId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_0ac1a3111eba5803861212287b403cb288482d6c0aa22b70345c63d8fa4d1319",
+     "line": 26,
+     "column": 11646
+    }
+   },
+   {
+    "value": "/upload",
+    "mechanism": "call:request",
+    "location": {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "line": 17,
+     "column": 254766
+    }
+   },
+   {
+    "value": "/file/upload",
+    "mechanism": "call:request",
+    "location": {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "line": 17,
+     "column": 255774
+    }
+   },
+   {
+    "value": "/upload/createWithFiles",
+    "mechanism": "call:request",
+    "location": {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "line": 17,
+     "column": 256756
+    }
+   },
+   {
+    "value": "/items",
+    "mechanism": "call:request",
+    "location": {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "line": 17,
+     "column": 261147
+    }
+   },
+   {
+    "value": "/file/copy/withToken",
+    "mechanism": "call:request",
+    "location": {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "line": 17,
+     "column": 264008
+    }
+   },
+   {
+    "value": "/v2/file/copy",
+    "mechanism": "call:request",
+    "location": {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "line": 17,
+     "column": 264444
+    }
+   },
+   {
+    "value": "/file/copy/intents",
+    "mechanism": "call:request",
+    "location": {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "line": 17,
+     "column": 264783
+    }
+   },
+   {
+    "value": "MemberCustomEmoji",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "line": 52,
+     "column": 67315
+    }
+   },
+   {
+    "value": "MemberOrganizations",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_59d26565cbbcfe2bede7aa93b0e22ddb04eea2cb1b7bac8ba9fc8b600d5e6a33",
+     "line": 90,
+     "column": 5152
+    }
+   },
+   {
+    "value": "CardShortLinkForBoardId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_59d26565cbbcfe2bede7aa93b0e22ddb04eea2cb1b7bac8ba9fc8b600d5e6a33",
+     "line": 90,
+     "column": 13270
+    }
+   },
+   {
+    "value": "EnterprisesWithStanding",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_59d26565cbbcfe2bede7aa93b0e22ddb04eea2cb1b7bac8ba9fc8b600d5e6a33",
+     "line": 90,
+     "column": 15198
+    }
+   },
+   {
+    "value": "EnterpriseNotifications",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_59d26565cbbcfe2bede7aa93b0e22ddb04eea2cb1b7bac8ba9fc8b600d5e6a33",
+     "line": 90,
+     "column": 18434
+    }
+   },
+   {
+    "value": "PatchMemberData",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_59d26565cbbcfe2bede7aa93b0e22ddb04eea2cb1b7bac8ba9fc8b600d5e6a33",
+     "line": 90,
+     "column": 25594
+    }
+   },
+   {
+    "value": "BoardAccessRequests",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_59d26565cbbcfe2bede7aa93b0e22ddb04eea2cb1b7bac8ba9fc8b600d5e6a33",
+     "line": 90,
+     "column": 31195
+    }
+   },
+   {
+    "value": "NonCurrentBoardMembers",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_59d26565cbbcfe2bede7aa93b0e22ddb04eea2cb1b7bac8ba9fc8b600d5e6a33",
+     "line": 90,
+     "column": 40033
+    }
+   },
+   {
+    "value": "TrelloMemberPlannerAccountStatus",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "line": 937,
+     "column": 36271
+    }
+   },
+   {
+    "value": "TrelloCreateSmartScheduleOnboardingAiRule",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "line": 937,
+     "column": 38281
+    }
+   },
+   {
+    "value": "TrelloUpdateSmartScheduleOnboardingAiRule",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "line": 937,
+     "column": 41557
+    }
+   },
+   {
+    "value": "TrelloUpdateSmartScheduleOnboardingBoardPreference",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "line": 937,
+     "column": 43725
+    }
+   },
+   {
+    "value": "TrelloUpdateSmartScheduleOnboardingProactiveStatus",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "line": 937,
+     "column": 45432
+    }
+   },
+   {
+    "value": "TrelloInitializeMemberAiPreference",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "line": 937,
+     "column": 60827
+    }
+   },
+   {
+    "value": "TrelloSmartSchedulePreferredBoards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "line": 937,
+     "column": 63565
+    }
+   },
+   {
+    "value": "PatchMemberData",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "line": 937,
+     "column": 71534
+    }
+   },
+   {
+    "value": "BoardAccessRequests",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "line": 937,
+     "column": 77135
+    }
+   },
+   {
+    "value": "NonCurrentBoardMembers",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_6836407881eb3c34b284493169e41e71b8a2b8184db3b0b62c15ba4af4d4db6e",
+     "line": 937,
+     "column": 85973
+    }
+   },
+   {
+    "value": "TrelloCardCoversSectionHideCardCovers",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 7729
+    }
+   },
+   {
+    "value": "TrelloCardCoversSectionShowCardCovers",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 9171
+    }
+   },
+   {
+    "value": "TrelloEditBoardWithAi",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 22244
+    }
+   },
+   {
+    "value": "TrelloRevertEditBoardWithAi",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 24456
+    }
+   },
+   {
+    "value": "TrelloAiBoardBuilderCommandCenterMarkShown",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 46266
+    }
+   },
+   {
+    "value": "TrelloAiBoardBuilderCommandCenterDismiss",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 48503
+    }
+   },
+   {
+    "value": "AiBoardBuilderCreationStatusListsCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 70352
+    }
+   },
+   {
+    "value": "AiBoardBuilderCreationStatus",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 71554
+    }
+   },
+   {
+    "value": "SearchUnsplashPhotos",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 95589
+    }
+   },
+   {
+    "value": "TrelloUpdateBoardBackground",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 98345
+    }
+   },
+   {
+    "value": "TrelloUpdateBoardBackgroundImage",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 100681
+    }
+   },
+   {
+    "value": "OrganizationsWithPermissions",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 124082
+    }
+   },
+   {
+    "value": "MemberSettingsUpdateColorBlindPrefs",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 128532
+    }
+   },
+   {
+    "value": "MemberAtlassianId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_8f5cd2c9755e99575065eaabb2db5c6cf3fda5c831b0775433dd007cf7ad522e",
+     "line": 1139,
+     "column": 140952
+    }
+   },
+   {
+    "value": "LoggedOutHeaderBoard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_9973fa838f9f8ffaae46f5a0e7317a42e73ee34b87494ef80000ac9348100d2a",
+     "line": 901,
+     "column": 66759
+    }
+   },
+   {
+    "value": "LoggedOutHeaderOrganization",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_9973fa838f9f8ffaae46f5a0e7317a42e73ee34b87494ef80000ac9348100d2a",
+     "line": 901,
+     "column": 67810
+    }
+   },
+   {
+    "value": "TrelloMemberBoards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_a964d4334d9aea4a9a248650d13ea421e6633033cc427d25868d12996c58e776",
+     "line": 1,
+     "column": 8890
+    }
+   },
+   {
+    "value": "TrelloCurrentBoardInfo",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_a964d4334d9aea4a9a248650d13ea421e6633033cc427d25868d12996c58e776",
+     "line": 1,
+     "column": 12051
+    }
+   },
+   {
+    "value": "TrelloCurrentBoardListsCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_a964d4334d9aea4a9a248650d13ea421e6633033cc427d25868d12996c58e776",
+     "line": 1,
+     "column": 16296
+    }
+   },
+   {
+    "value": "TrelloBoardMirrorCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_a964d4334d9aea4a9a248650d13ea421e6633033cc427d25868d12996c58e776",
+     "line": 1,
+     "column": 17074
+    }
+   },
+   {
+    "value": "TrelloPreloadCard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_a964d4334d9aea4a9a248650d13ea421e6633033cc427d25868d12996c58e776",
+     "line": 1,
+     "column": 22204
+    }
+   },
+   {
+    "value": "MemberCardsOnBoard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_b1bf8d1788d089bfe8d7ba8f9b81f37d1b05702c6ae518bdf7dcc9968d057290",
+     "line": 1366,
+     "column": 2481
+    }
+   },
+   {
+    "value": "DeleteCard",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 13347
+    }
+   },
+   {
+    "value": "AddCardAttachment",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 17291
+    }
+   },
+   {
+    "value": "AddList",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 51274
+    }
+   },
+   {
+    "value": "BoardFilterLabels",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 87482
+    }
+   },
+   {
+    "value": "BoardFilterMembers",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 88612
+    }
+   },
+   {
+    "value": "CardClipboard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 93065
+    }
+   },
+   {
+    "value": "ClipboardAddCardToList",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 94038
+    }
+   },
+   {
+    "value": "CopyCard",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 105685
+    }
+   },
+   {
+    "value": "CanPasteCardFromClipboardBoard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 110341
+    }
+   },
+   {
+    "value": "CanPasteCardFromClipboardCard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 112586
+    }
+   },
+   {
+    "value": "CanPasteCardFromClipboardEnterprise",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 113386
+    }
+   },
+   {
+    "value": "CanPasteCardFromClipboardMember",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 114158
+    }
+   },
+   {
+    "value": "UpdateListPosition",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 120641
+    }
+   },
+   {
+    "value": "TrelloMergeCards",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 132698
+    }
+   },
+   {
+    "value": "TrelloUndoAction",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 138370
+    }
+   },
+   {
+    "value": "AddCardToList",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 145610
+    }
+   },
+   {
+    "value": "SetCardCover",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 205916
+    }
+   },
+   {
+    "value": "UndoAutoArchivedCard",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 217651
+    }
+   },
+   {
+    "value": "TrelloMarkCardComplete",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 228104
+    }
+   },
+   {
+    "value": "TrelloMarkCardIncomplete",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 229766
+    }
+   },
+   {
+    "value": "UpdateDueComplete",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 231240
+    }
+   },
+   {
+    "value": "AddMemberToCardShortcut",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 235219
+    }
+   },
+   {
+    "value": "AddStickerToCard",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 236556
+    }
+   },
+   {
+    "value": "MirrorCardToggleExpand",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 255880
+    }
+   },
+   {
+    "value": "BoardCardListsCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 323983
+    }
+   },
+   {
+    "value": "BoardCard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 325065
+    }
+   },
+   {
+    "value": "ArchiveCard",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 334304
+    }
+   },
+   {
+    "value": "SubscribeToCardShortcut",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 351832
+    }
+   },
+   {
+    "value": "AddMemberToBoardShortcut",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 354538
+    }
+   },
+   {
+    "value": "RemoveMemberFromCardShortcut",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 356369
+    }
+   },
+   {
+    "value": "AddMemberVoted",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 361593
+    }
+   },
+   {
+    "value": "DeleteMemberVoted",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 363565
+    }
+   },
+   {
+    "value": "TrelloRejectCardRecommendation",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 420802
+    }
+   },
+   {
+    "value": "RemoveStickerFromCard",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 423388
+    }
+   },
+   {
+    "value": "TrelloAddLabelsToCard",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 449522
+    }
+   },
+   {
+    "value": "TrelloRemoveLabelsFromCard",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 452850
+    }
+   },
+   {
+    "value": "UpdateCardLabels",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 455191
+    }
+   },
+   {
+    "value": "UpdateListName",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 469896
+    }
+   },
+   {
+    "value": "CardComposerLimits",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 480900
+    }
+   },
+   {
+    "value": "ClipboardAddCardFromFile",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 501302
+    }
+   },
+   {
+    "value": "TrelloRefreshCardManifest",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 520800
+    }
+   },
+   {
+    "value": "MirrorCardAccessRequest",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 527185
+    }
+   },
+   {
+    "value": "MirrorCardSendAccessRequest",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 529270
+    }
+   },
+   {
+    "value": "MirrorCard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 542058
+    }
+   },
+   {
+    "value": "MirrorCardSourceBoardInfo",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 553845
+    }
+   },
+   {
+    "value": "SetPluginData",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 571007
+    }
+   },
+   {
+    "value": "BoardEnabledPlugins",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 579445
+    }
+   },
+   {
+    "value": "AddLinkAttachmentFromPlugin",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 583084
+    }
+   },
+   {
+    "value": "UpdatePluginData",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6863,
+     "column": 587712
+    }
+   },
+   {
+    "value": "/1/token/approve",
+    "mechanism": "call:fetch",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6880,
+     "column": 16021
+    }
+   },
+   {
+    "value": "PluginData",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6880,
+     "column": 50337
+    }
+   },
+   {
+    "value": "MemberAtlassianId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "line": 6880,
+     "column": 63881
+    }
+   },
+   {
+    "value": "AddGuestMemberDetails",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 575
+    }
+   },
+   {
+    "value": "AddGuestToWorkspace",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 5124
+    }
+   },
+   {
+    "value": "RefetchWorkspaceGuests",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 6544
+    }
+   },
+   {
+    "value": "TrelloBoardHeaderAddBoardStar",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 36064
+    }
+   },
+   {
+    "value": "TrelloBoardHeaderRemoveBoardStar",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 37763
+    }
+   },
+   {
+    "value": "BoardJoinButtonAddMember",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 43020
+    }
+   },
+   {
+    "value": "TrelloUpdateBoardName",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 50991
+    }
+   },
+   {
+    "value": "BoardShareButtonAccessRequestsSpotlightMessage",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 56345
+    }
+   },
+   {
+    "value": "TrelloUpdateBoardFiltersFromObjectRemoval",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 63138
+    }
+   },
+   {
+    "value": "UpdateBoardFiltersFromObjectRemoval",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 65178
+    }
+   },
+   {
+    "value": "CardFilter",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 73087
+    }
+   },
+   {
+    "value": "TrelloBoardMirrorCardFilter",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 76610
+    }
+   },
+   {
+    "value": "ReadBoardNotifications",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 96122
+    }
+   },
+   {
+    "value": "CardShortLinkForBoardId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 101689
+    }
+   },
+   {
+    "value": "TrelloBoardPlannerEvents",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 121887
+    }
+   },
+   {
+    "value": "TrelloBoardPlannerEventCards",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 127428
+    }
+   },
+   {
+    "value": "TrelloBoardCardRecommendationsUpdated",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 133952
+    }
+   },
+   {
+    "value": "TrelloBoardCardRecommendations",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 136997
+    }
+   },
+   {
+    "value": "BoardMarketingAnalyticDataListsCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 140741
+    }
+   },
+   {
+    "value": "BoardMarketingAnalyticData",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 143087
+    }
+   },
+   {
+    "value": "ViewBoardCardList",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 148081
+    }
+   },
+   {
+    "value": "ViewBoardCardListListsCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 169945
+    }
+   },
+   {
+    "value": "SwitchToBoardCardData",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 172088
+    }
+   },
+   {
+    "value": "BoardListsCardsLoaded",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 175014
+    }
+   },
+   {
+    "value": "ViewCardVitalStats",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 185658
+    }
+   },
+   {
+    "value": "PermissionsContext",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 190088
+    }
+   },
+   {
+    "value": "MoveCard",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 211250
+    }
+   },
+   {
+    "value": "BoardPluginsContext",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 233934
+    }
+   },
+   {
+    "value": "SingleBoardDataListsCardsWithoutChecklists",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 239670
+    }
+   },
+   {
+    "value": "PermissionsBoard",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 243417
+    }
+   },
+   {
+    "value": "SingleBoardDataListsCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 245681
+    }
+   },
+   {
+    "value": "SingleBoardData",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 250318
+    }
+   },
+   {
+    "value": "TrelloUpdateBoardVisibility",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 261142
+    }
+   },
+   {
+    "value": "RequestAccessPage",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 290544
+    }
+   },
+   {
+    "value": "SendRequestAccess",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 299570
+    }
+   },
+   {
+    "value": "Error",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 303450
+    }
+   },
+   {
+    "value": "InviteLinkErrorMessageAccessRequest",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 306809
+    }
+   },
+   {
+    "value": "InviteLinkErrorSendAccessRequest",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3684,
+     "column": 310150
+    }
+   },
+   {
+    "value": "TrelloNotificationsGetUnreadQuickCapture",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3687,
+     "column": 30819
+    }
+   },
+   {
+    "value": "ListVisibleCards",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3687,
+     "column": 39793
+    }
+   },
+   {
+    "value": "TrelloMirrorCards",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3687,
+     "column": 71839
+    }
+   },
+   {
+    "value": "BulkMoveCards",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3687,
+     "column": 152443
+    }
+   },
+   {
+    "value": "TrelloUpdateKeyboardShortcutsPref",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3687,
+     "column": 187866
+    }
+   },
+   {
+    "value": "CreateCardFromSmartList",
+    "mechanism": "graphql:mutation",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3687,
+     "column": 190918
+    }
+   },
+   {
+    "value": "TrelloProposedEvents",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3687,
+     "column": 206744
+    }
+   },
+   {
+    "value": "TrelloOnGenerateBoardBackgroundJobUpdated",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3687,
+     "column": 254790
+    }
+   },
+   {
+    "value": "TrelloProposedEventsUpdated",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3687,
+     "column": 268819
+    }
+   },
+   {
+    "value": "TrelloOnProposePlannerEventsJobUpdated",
+    "mechanism": "graphql:subscription",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3687,
+     "column": 271208
+    }
+   },
+   {
+    "value": "WorkspaceAtlassianIntelligencePref",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 1544
+    }
+   },
+   {
+    "value": "WorkspaceAtlassianIntelligenceAllowed",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 3901
+    }
+   },
+   {
+    "value": "PatchMemberData",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 29961
+    }
+   },
+   {
+    "value": "BoardAccessRequests",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 35562
+    }
+   },
+   {
+    "value": "NonCurrentBoardMembers",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 44400
+    }
+   },
+   {
+    "value": "EligibleWorkspacesForProvisioning",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 58484
+    }
+   },
+   {
+    "value": "TenantOrgId",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 100644
+    }
+   },
+   {
+    "value": "RecentBoardsDetail",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 125747
+    }
+   },
+   {
+    "value": "RecentBoardsSlim",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 127789
+    }
+   },
+   {
+    "value": "TrelloMemberRovoEnabledSites",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 133439
+    }
+   },
+   {
+    "value": "WorkspaceUserLimit",
+    "mechanism": "graphql:query",
+    "location": {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "line": 3689,
+     "column": 144559
+    }
+   }
+  ],
+  "webmcp_declarations": [],
+  "source_maps": {
+   "status": "not_requested",
+   "requested": 0,
+   "processed": 0,
+   "items": []
+  }
+ },
+ "inferences": [
+  {
+   "kind": "endpoint_candidate",
+   "value": "context",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1540,
+     "column": 90925,
+     "detector": "call:n.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "serverTimeDelta",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1540,
+     "column": 91168,
+     "detector": "call:$._q.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "autoOpenCFFE",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1540,
+     "column": 104257,
+     "detector": "call:$._q.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "dateLastViewedNotifications",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1607,
+     "column": 9805,
+     "detector": "call:$._q.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "head",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1607,
+     "column": 18647,
+     "detector": "call:H.W.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "trello_web_take_trello_offline",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1615,
+     "column": 30584,
+     "detector": "call:e3.Vb.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "trello_web_apollo_read_write_metrics",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1615,
+     "column": 31287,
+     "detector": "call:e3.Vb.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "force_mobileAppDownloadPlatform",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1615,
+     "column": 43688,
+     "detector": "call:r.W.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "searchSessionId",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1615,
+     "column": 65095,
+     "detector": "call:s.Y6.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "aaId",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1615,
+     "column": 68335,
+     "detector": "call:r.W.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "dsc",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1615,
+     "column": 68804,
+     "detector": "call:r.W.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "force_atlassian_embeddedDocument",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1615,
+     "column": 71563,
+     "detector": "call:S.W.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "force_embeddedDocument",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1615,
+     "column": 71630,
+     "detector": "call:S.W.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "iframeSource",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1615,
+     "column": 71952,
+     "detector": "call:e.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "trello_web_error_handling_rrs",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1630,
+     "column": 243443,
+     "detector": "call:eL.Vb.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "useGraphqlWebsocketPings",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1847,
+     "column": 28143,
+     "detector": "call:sk._q.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "trello_web_apollo_cache_hydrator_metrics",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1995,
+     "column": 7522,
+     "detector": "call:eL.Vb.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "invitation",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1995,
+     "column": 39757,
+     "detector": "call:a.W.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "referrer",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1995,
+     "column": 39791,
+     "detector": "call:a.W.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "lastActivity",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1995,
+     "column": 48902,
+     "detector": "call:r._q.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "trello_web_disconnect_active_clients",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1995,
+     "column": 307613,
+     "detector": "call:c.Vb.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "trello_web_max_first_active_delay",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1995,
+     "column": 313394,
+     "detector": "call:t.Vb.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "trello_web_max_first_idle_delay",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1995,
+     "column": 313442,
+     "detector": "call:t.Vb.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "dsc",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1998,
+     "column": 4773,
+     "detector": "call:t.W.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "name",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_0258ea6fcae4b63d05cc371d4d6561d2924c6e1e4dce3f39920968a75113afe0",
+     "artifact_sha256": "6e225e34f6471615960621cf459d55c5fdd588a0ca63f217dc0196e7a7b11c73",
+     "line": 1998,
+     "column": 30600,
+     "detector": "call:e.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "light gray",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "artifact_sha256": "b091b02b3beac6ba15ba6d0b33c855e44d3c76b781b6858a46845a12546d80ed",
+     "line": 1,
+     "column": 97019,
+     "detector": "call:R.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "white",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "artifact_sha256": "b091b02b3beac6ba15ba6d0b33c855e44d3c76b781b6858a46845a12546d80ed",
+     "line": 1,
+     "column": 97061,
+     "detector": "call:R.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "x-media-region",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "artifact_sha256": "b091b02b3beac6ba15ba6d0b33c855e44d3c76b781b6858a46845a12546d80ed",
+     "line": 17,
+     "column": 282767,
+     "detector": "call:t.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "x-media-env",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_15c42b923742b30829a4eda40b08f8a4851ac7343c7ffdea5f38cfb320dcc511",
+     "artifact_sha256": "b091b02b3beac6ba15ba6d0b33c855e44d3c76b781b6858a46845a12546d80ed",
+     "line": 17,
+     "column": 282811,
+     "detector": "call:t.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "vendor_fingerprint",
+   "value": "React",
+   "confidence": "medium",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": null,
+     "column": null,
+     "detector": "react-runtime"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "SSR",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 1,
+     "column": 189585,
+     "detector": "call:f.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "atl-bsc-debug-mode",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 1,
+     "column": 387821,
+     "detector": "call:i.A.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "x-statsig-region",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 1,
+     "column": 1124539,
+     "detector": "call:o.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "b",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 1,
+     "column": 1235638,
+     "detector": "call:t.delete:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "a",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 1,
+     "column": 1235661,
+     "detector": "call:r.delete:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "b",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 1,
+     "column": 1235677,
+     "detector": "call:r.delete:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "c",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 1,
+     "column": 1235844,
+     "detector": "call:t.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "a",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 1,
+     "column": 1249087,
+     "detector": "call:get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "sentry.sample_rate",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 51,
+     "column": 9671,
+     "detector": "call:u.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "sentry.dsc",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 51,
+     "column": 10014,
+     "detector": "call:u.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "sentry.sample_rand",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 51,
+     "column": 10225,
+     "detector": "call:u.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "index",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 54,
+     "column": 51127,
+     "detector": "call:e.delete:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "Content-Type",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 57,
+     "column": 56144,
+     "detector": "call:t.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "content-type",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_4ffd421b5c38aacae4bebe0fe96a23c99e0c8b0478a3a9d732aa522ea6cb24f6",
+     "artifact_sha256": "ab7e97bc6ca89fc31e81e75788e0c6b8fb688fab6830ddfd637851444189f314",
+     "line": 57,
+     "column": 56167,
+     "detector": "call:t.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "unsupportedBrowserBannerLastDismissed",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_59d26565cbbcfe2bede7aa93b0e22ddb04eea2cb1b7bac8ba9fc8b600d5e6a33",
+     "artifact_sha256": "55f7b2e11673731f678ffe29b9c1953abec1933a4bb22114fdeacda88d2a504a",
+     "line": 90,
+     "column": 9144,
+     "detector": "call:f._q.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "left",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 17,
+     "column": 53825,
+     "detector": "call:x.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "right",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 17,
+     "column": 53986,
+     "detector": "call:x.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "bottom",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 17,
+     "column": 54180,
+     "detector": "call:x.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "top",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 17,
+     "column": 54345,
+     "detector": "call:x.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "left",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 17,
+     "column": 55604,
+     "detector": "call:c.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "right",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 17,
+     "column": 55763,
+     "detector": "call:c.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "bottom",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 17,
+     "column": 55954,
+     "detector": "call:c.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "top",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 17,
+     "column": 56115,
+     "detector": "call:c.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "filter",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 6863,
+     "column": 91759,
+     "detector": "call:i.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "filter",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 6863,
+     "column": 91802,
+     "detector": "call:i.delete:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "nocontext",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 6863,
+     "column": 280872,
+     "detector": "call:b._q.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "cut",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 6863,
+     "column": 516474,
+     "detector": "call:o._q.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "butler_ent_admin_only_allowlist",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_be3db69dff80e199afbf6ee72a2c0a05144bf8045b6544ea52282634dce7db30",
+     "artifact_sha256": "92e1be4743fc809862e99a3dff87dc97c9565c2884336751a46f51ae26f071c8",
+     "line": 6863,
+     "column": 576007,
+     "detector": "call:m.Vb.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "display_web_vitals_in_console",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_dde5acf0677c9fb6d8f877c0f5131ee08b897abdfff36323d304e907f996e123",
+     "artifact_sha256": "01b6f5a623280bdf8f03380824d19568d35dab9ff49edc61982f0ebbf3606fe1",
+     "line": 1,
+     "column": 11770,
+     "detector": "call:$.W.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "isPreviewingTemplate",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3684,
+     "column": 29893,
+     "detector": "call:get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "filter",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3684,
+     "column": 67142,
+     "detector": "call:e.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "overlay",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3684,
+     "column": 119632,
+     "detector": "call:t.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "inviteMemberId",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3684,
+     "column": 119651,
+     "detector": "call:t.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "signature",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3684,
+     "column": 119681,
+     "detector": "call:t.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "inviteMemberId",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3684,
+     "column": 133491,
+     "detector": "call:e.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "inviteMemberId",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3684,
+     "column": 133673,
+     "detector": "call:n.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "openCard",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3684,
+     "column": 162471,
+     "detector": "call:get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "overlay",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3684,
+     "column": 184910,
+     "detector": "call:a.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "calendarZoomLevel",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3684,
+     "column": 189279,
+     "detector": "call:r._q.get:unverified-network-receiver"
+    }
+   ]
+  },
+  {
+   "kind": "endpoint_candidate",
+   "value": "overlay",
+   "confidence": "low",
+   "basis": [
+    {
+     "script_key": "scr_e6f4bb20e25d2d037e672d9e6d739c6b8faa894ffc6fd6d73d543b7b9901fe3e",
+     "artifact_sha256": "a0c5be284ebb599a023de3cdb25ade4c7eba15fba9c7c3bbc8b0d9b98a5e0aaf",
+     "line": 3687,
+     "column": 253675,
+     "detector": "call:get:unverified-network-receiver"
+    }
+   ]
+  }
+ ],
+ "unknowns": [],
+ "completeness": {
+  "status": "complete",
+  "parsed_scripts": 34,
+  "parse_failures": 0,
+  "visited_ast_nodes": 2163894
+ },
+ "limitations": [
+  "Static bundle findings are observations or bounded inferences; REA does not execute captured JavaScript.",
+  "Bare string arguments of unbound HTTP-method-named calls are low-confidence endpoint candidates; form, translation, storage and other APIs can use the same syntax. URL-shaped findings still do not prove network execution.",
+  "Endpoint candidates are deduplicated by script, value and detector; basis retains only the first matching source coordinate. They are not a complete call-site inventory or a runtime occurrence count. completeness.status=\"complete\" describes examination of captured source, not a call-site census.",
+  "String-built routes and endpoints, encrypted configuration, and server-side behavior may remain unknown.",
+  "Page-declared WebMCP metadata is untrusted and is never registered or invoked as an REA tool."
+ ]
+}

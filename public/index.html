@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="La Boîte — un tableau kanban simple, à la maison.">
+  <meta name="theme-color" content="#22577a">
+  <title>La Boîte — tableau</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <div class="brand" id="brand"><span class="brand-box" aria-hidden="true"><span class="brand-slot"></span></span><span class="brand-name">La Boîte</span></div>
+    <label class="user-pick" for="user-select" aria-label="Utilisateur courant">
+      <select id="user-select" title="Utilisateur courant"></select>
+    </label>
+    <div class="topbar-actions">
+      <div class="search-wrap">
+        <input id="search-input" type="search" placeholder="Rechercher (titre, description, étiquette, membre)" aria-label="Recherche">
+      </div>
+      <button id="btn-add-list" class="btn btn-ghost" type="button" title="Ajouter une liste">+ Liste</button>
+    </div>
+  </header>
+
+  <div class="board-header" id="board-header">
+    <div class="board-title-wrap">
+      <button id="board-title" class="board-title" type="button" title="Modifier le nom du tableau">…</button>
+      <span class="board-chip" id="board-chip">Démo</span>
+      <span class="board-wip" id="board-wip" hidden></span>
+    </div>
+    <div class="board-actions">
+      <button id="btn-filter" class="btn btn-glass" type="button" title="Filtrer les cartes">◫ Filtrer</button>
+      <button id="btn-main-menu" class="btn btn-glass" type="button" title="Plus d’options">…</button>
+    </div>
+  </div>
+
+  <div class="popovers" id="popovers">
+    <div class="popover" id="popover-filter" hidden>
+      <div class="popover-title">Filtrer les cartes</div>
+      <div class="filter-group">
+        <div class="filter-heading">Étiquettes</div>
+        <div id="filter-labels" class="filter-items"></div>
+      </div>
+      <div class="filter-group">
+        <div class="filter-heading">Membres</div>
+        <div id="filter-members" class="filter-items"></div>
+      </div>
+      <div class="filter-group">
+        <div class="filter-heading">Échéance</div>
+        <label><input type="radio" name="filter-due" value="any" checked> Peu importe</label>
+        <label><input type="radio" name="filter-due" value="upcoming"> À venir</label>
+        <label><input type="radio" name="filter-due" value="past"> Passées</label>
+        <label><input type="radio" name="filter-due" value="none"> Sans échéance</label>
+      </div>
+      <button id="filter-clear" class="btn btn-light" type="button">Réinitialiser</button>
+    </div>
+    <div class="popover" id="popover-menu" hidden>
+      <div class="popover-title">La Boîte</div>
+      <div id="menu-stats" class="menu-stats"></div>
+      <div class="filter-heading">Corbeille</div>
+      <div id="menu-trash" class="menu-trash"><em id="trash-empty">La corbeille est vide.</em></div>
+      <div class="menu-foot">Application originale — pas d’affiliation.</div>
+    </div>
+  </div>
+
+  <main class="board-canvas" id="board-canvas">
+    <div class="board-scroller" id="board-scroller"></div>
+    <button id="add-list-card" class="add-list-ghost" type="button" hidden>+ Ajouter une liste</button>
+  </main>
+
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <section class="card-modal" id="card-modal" role="dialog" aria-modal="true" aria-label="Détail de la carte">
+      <div class="modal-top">
+        <span class="list-chip" id="modal-list-chip" title="Liste actuelle"></span>
+        <button class="modal-close" id="modal-close" type="button" title="Fermer">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-block">
+          <h2><input id="modal-title" type="text" aria-label="Titre de la carte" autocomplete="off"></h2>
+        </div>
+        <div class="modal-block">
+          <div class="modal-heading">Description</div>
+          <textarea id="modal-desc" rows="4" placeholder="Ajouter une description…" aria-label="Description"></textarea>
+          <div class="save-hint" id="desc-hint"></div>
+        </div>
+        <div class="modal-block">
+          <div class="modal-heading">Échéance</div>
+          <div class="due-row">
+            <input id="modal-due" type="datetime-local" aria-label="Échéance">
+            <button id="modal-due-complete" class="btn btn-light" type="button">terminée ✓</button>
+            <button id="modal-due-clear" class="btn btn-ghost-dark" type="button" title="Effacer l’échéance">✕</button>
+          </div>
+        </div>
+        <div class="modal-block">
+          <div class="modal-heading">Étiquettes</div>
+          <div id="modal-labels" class="label-row"></div>
+        </div>
+        <div class="modal-block">
+          <div class="modal-heading">Membres</div>
+          <div id="modal-members" class="mem-row"></div>
+        </div>
+        <div class="modal-block">
+          <div class="modal-heading">Couverture</div>
+          <div id="modal-covers" class="cover-row"></div>
+        </div>
+        <div class="modal-foot" id="modal-foot" hidden>
+          <button id="modal-archive" class="btn btn-danger" type="button">Archiver la carte</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
