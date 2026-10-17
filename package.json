@@ -1,0 +1,19 @@
+{
+  "name": "la-boite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "La Boîte — tableau kanban (vanilla JS + Express + better-sqlite3 + PWA)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/mvp.cjs",
+    "icons": "node scripts/make-icons.cjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "better-sqlite3": "^12.4.1"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
+  }
+}
