@@ -8,6 +8,10 @@ const state = {
   labels: [],
   members: [],
   archived: [],
+  backgrounds: [],
+  modalDetail: null, // {card, checklists, comments, activity} de la carte ouverte
+  showActivity: localStorage.getItem('laboite.showActivity') === '1',
+  notifications: { unread: 0, notifications: [] },
   userId: Number(localStorage.getItem('laboite.user') || 1),
   filters: { labels: new Set(), members: new Set(), due: 'any' },
   searchIds: null,
@@ -44,6 +48,37 @@ function debounce(fn, ms) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
+// En-têtes JSON + auteur de l'action (journal d'activité, commentaires, notifications)
+function jsonHeaders() {
+  return { 'Content-Type': 'application/json', 'X-Member-Id': String(state.userId) };
+}
+
+function api(method, url, body) {
+  return fetch(url, {
+    method,
+    headers: jsonHeaders(),
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+}
+
+function fmtWhen(iso) {
+  const d = new Date(iso);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'à l’instant';
+  if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `il y a ${Math.floor(diff / 3600)} h`;
+  return d.toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function avatar(initials, color, name) {
+  const av = document.createElement('span');
+  av.className = 'member-avatar';
+  av.textContent = initials || '?';
+  av.style.background = color || '#7b8894';
+  if (name) av.title = name;
+  return av;
+}
+
 let toastTimer;
 function toast(msg) {
   const el = $('#toast');
@@ -68,11 +103,17 @@ async function refresh() {
   state.labels = data.labels;
   state.members = data.members;
   state.archived = data.archived || [];
+  state.backgrounds = data.backgrounds || [];
   renderBoard();
   renderPopovers();
+  if (state.modalCardId) {
+    const found = findCard(state.modalCardId);
+    if (found) { fillModal(found.card, found.list); loadModalDetail(); } else closeModal();
+  }
 }
 
 const refreshSoon = debounce(refresh, 90);
+const loadNotificationsSoon = debounce(() => loadNotifications(), 150);
 
 /* ------------------------------- Rendu --------------------------------- */
 
@@ -234,6 +275,21 @@ function buildCard(card) {
     due.title = 'Échéance : ' + card.due_at + (isDueComplete(card) ? ' (terminée)' : '');
     badges.appendChild(due);
   }
+  const cl = card.checklist;
+  if (cl && cl.total) {
+    const b = document.createElement('span');
+    b.className = 'badge-check' + (cl.done === cl.total ? ' check-complete' : '');
+    b.textContent = `☑ ${cl.done}/${cl.total}`;
+    b.title = 'Éléments de checklist terminés';
+    badges.appendChild(b);
+  }
+  if (card.comments_count) {
+    const b = document.createElement('span');
+    b.className = 'badge-comments';
+    b.textContent = `💬 ${card.comments_count}`;
+    b.title = `${card.comments_count} commentaire${card.comments_count > 1 ? 's' : ''}`;
+    badges.appendChild(b);
+  }
   for (const m of card.members) {
     const av = document.createElement('span');
     av.className = 'member-avatar';
@@ -338,7 +394,7 @@ function openComposer(listId, top) {
     try {
       const res = await fetch('/api/cards', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify({ list_id: listId, title: value, pos, created_by: state.userId })
       });
       if (!res.ok) toast('Impossible d’ajouter la carte');
@@ -384,7 +440,7 @@ function startListRename(wrap, list) {
 async function patchList(id, body) {
   const res = await fetch(`/api/lists/${id}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: jsonHeaders(),
     body: JSON.stringify(body)
   });
   refreshSoon();
@@ -419,7 +475,7 @@ function wireCardDropZone(cardsBox) {
     else pos = (Number(children[index - 1].dataset.pos) + Number(children[index].dataset.pos)) / 2;
     await fetch(`/api/cards/${cardId}/move`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
       body: JSON.stringify({ list_id: Number(cardsBox.dataset.listId), pos })
     });
     refreshSoon();
@@ -491,7 +547,7 @@ function wireListDrag(wrap, list, head) {
     state.dragListId = null;
     await fetch(`/api/lists/${dragId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
       body: JSON.stringify({ pos })
     });
     refreshSoon();
@@ -503,6 +559,39 @@ function wireListDrag(wrap, list, head) {
 function renderPopovers() {
   renderFilterPopover();
   renderMenuPopover();
+}
+
+function renderBackgrounds() {
+  const box = $('#menu-backgrounds');
+  box.textContent = '';
+  for (const bg of state.backgrounds) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'bg-swatch' + (state.board && state.board.background === bg ? ' on' : '');
+    b.style.background = bg;
+    b.title = 'Choisir ce fond';
+    b.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const res = await api('PATCH', `/api/boards/${state.boardId}`, { background: bg });
+      if (res.ok) refreshSoon(); else toast('Fond refusé');
+    });
+    box.appendChild(b);
+  }
+}
+
+async function loadBoardActivity() {
+  const res = await fetch(`/api/board/${state.boardId}/activity?limit=15`);
+  if (!res.ok) return;
+  const { activity } = await res.json();
+  const box = $('#menu-activity');
+  box.textContent = '';
+  if (!activity.length) {
+    const li = document.createElement('li');
+    li.className = 'feed-empty';
+    li.textContent = 'Aucune activité pour l’instant.';
+    box.appendChild(li);
+  }
+  for (const a of activity) box.appendChild(buildActivityItem(a, true));
 }
 
 function renderFilterPopover() {
@@ -545,6 +634,7 @@ function renderMenuPopover() {
   const stats = $('#menu-stats');
   const total = state.lists.reduce((n, l) => n + l.cards.length, 0);
   stats.textContent = `${state.board ? state.board.name : ''} — ${state.lists.length} listes, ${total} cartes.`;
+  renderBackgrounds();
   const trash = $('#menu-trash');
   trash.textContent = '';
   if (!state.archived.length) {
@@ -560,7 +650,7 @@ function renderMenuPopover() {
     restore.type = 'button';
     restore.textContent = 'Restaurer';
     restore.addEventListener('click', async () => {
-      await fetch(`/api/cards/${card.id}/unarchive`, { method: 'POST' });
+      await fetch(`/api/cards/${card.id}/unarchive`, { method: 'POST', headers: jsonHeaders() });
       refreshSoon();
       toast('Carte restaurée');
     });
@@ -588,13 +678,33 @@ function findCard(id) {
 function openModal(cardId) {
   const found = findCard(cardId);
   if (!found) return;
+  if (state.modalCardId !== cardId) {
+    state.modalDetail = null;
+    $('#modal-comment-input').value = '';
+    $('#modal-comment-save').disabled = true;
+    $('#modal-checklists').textContent = '';
+    $('#modal-feed').textContent = '';
+  }
   state.modalCardId = cardId;
   $('#modal-overlay').hidden = false;
+  $('#modal-copy-panel').hidden = true;
   fillModal(found.card, found.list);
+  loadModalDetail();
+}
+
+async function loadModalDetail() {
+  const id = state.modalCardId;
+  if (!id) return;
+  const res = await fetch(`/api/cards/${id}`);
+  if (!res.ok || state.modalCardId !== id) return;
+  state.modalDetail = await res.json();
+  renderChecklists();
+  renderFeed();
 }
 
 function closeModal() {
   state.modalCardId = null;
+  state.modalDetail = null;
   $('#modal-overlay').hidden = true;
   $('#desc-hint').textContent = '';
 }
@@ -621,7 +731,7 @@ function fillModal(card, list) {
     b.addEventListener('click', async () => {
       const res = await fetch(`/api/cards/${card.id}/labels`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify(assigned.has(l.id) ? { label_id: l.id, remove: true } : { label_id: l.id })
       });
       if (res.ok) refreshSoon();
@@ -642,7 +752,7 @@ function fillModal(card, list) {
     b.addEventListener('click', async () => {
       const res = await fetch(`/api/cards/${card.id}/members`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: jsonHeaders(),
         body: JSON.stringify(memIds.has(m.id) ? { member_id: m.id, remove: true } : { member_id: m.id })
       });
       if (res.ok) refreshSoon();
@@ -667,15 +777,307 @@ function fillModal(card, list) {
     coverBox.appendChild(b);
   }
 
-  const foot = $('#modal-foot');
-  foot.hidden = !isAdmin();
+  $('#modal-archive').hidden = !isAdmin();
+  const me = state.members.find((m) => m.id === state.userId);
+  const av = $('#modal-comment-avatar');
+  av.textContent = me ? me.initials : '?';
+  av.style.background = me ? me.color : '#7b8894';
+}
+
+/* ---------------------------- Modale : checklists ---------------------------- */
+
+function renderChecklists() {
+  const box = $('#modal-checklists');
+  const detail = state.modalDetail;
+  if (!detail) return;
+  // Préserve la saisie en cours (rendu déclenché par SSE pendant la frappe)
+  const active = document.activeElement;
+  const keep = active && box.contains(active) && active.dataset.key
+    ? { key: active.dataset.key, value: active.value, sel: active.selectionStart } : null;
+
+  box.textContent = '';
+  for (const cl of detail.checklists) {
+    const done = cl.items.filter((i) => i.checked).length;
+    const pct = cl.items.length ? Math.round((done / cl.items.length) * 100) : 0;
+    const sec = document.createElement('section');
+    sec.className = 'checklist';
+    sec.dataset.checklistId = cl.id;
+
+    const head = document.createElement('div');
+    head.className = 'checklist-head';
+    const name = document.createElement('input');
+    name.className = 'checklist-name';
+    name.value = cl.name;
+    name.dataset.key = `cl-name-${cl.id}`;
+    name.setAttribute('aria-label', 'Nom de la checklist');
+    name.addEventListener('keydown', (e) => { if (e.key === 'Enter') name.blur(); });
+    name.addEventListener('change', async () => {
+      const v = name.value.trim();
+      if (v && v !== cl.name) { await api('PATCH', `/api/checklists/${cl.id}`, { name: v }); loadModalDetail(); }
+    });
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'btn btn-ghost-dark btn-sm';
+    del.textContent = 'Supprimer';
+    del.addEventListener('click', async () => {
+      if (!confirm(`Supprimer la checklist « ${cl.name} » ?`)) return;
+      await api('DELETE', `/api/checklists/${cl.id}`);
+      refreshSoon();
+    });
+    head.append(name, del);
+
+    const prog = document.createElement('div');
+    prog.className = 'checklist-progress';
+    prog.innerHTML = `<span class="checklist-pct">${pct} %</span><span class="checklist-bar"><span style="width:${pct}%"></span></span>`;
+    prog.classList.toggle('is-complete', cl.items.length > 0 && done === cl.items.length);
+
+    const ul = document.createElement('ul');
+    ul.className = 'check-items';
+    for (const it of cl.items) {
+      const li = document.createElement('li');
+      li.className = 'check-item' + (it.checked ? ' is-checked' : '');
+      li.dataset.itemId = it.id;
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = it.checked;
+      cb.setAttribute('aria-label', it.name);
+      cb.addEventListener('change', async () => {
+        await api('PATCH', `/api/checkitems/${it.id}`, { checked: cb.checked });
+        refreshSoon();
+      });
+      const label = document.createElement('span');
+      label.className = 'check-item-name';
+      label.textContent = it.name;
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'check-item-del';
+      rm.title = 'Supprimer l’élément';
+      rm.textContent = '✕';
+      rm.addEventListener('click', async () => { await api('DELETE', `/api/checkitems/${it.id}`); refreshSoon(); });
+      li.append(cb, label, rm);
+      ul.appendChild(li);
+    }
+
+    const add = document.createElement('form');
+    add.className = 'check-add';
+    const input = document.createElement('input');
+    input.placeholder = 'Ajouter un élément…';
+    input.dataset.key = `cl-add-${cl.id}`;
+    input.setAttribute('aria-label', 'Nouvel élément');
+    const ok = document.createElement('button');
+    ok.type = 'submit';
+    ok.className = 'btn btn-primary btn-sm';
+    ok.textContent = 'Ajouter';
+    add.append(input, ok);
+    add.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const v = input.value.trim();
+      if (!v) return;
+      input.value = '';
+      await api('POST', `/api/checklists/${cl.id}/items`, { name: v });
+      refreshSoon();
+    });
+
+    sec.append(head, prog, ul, add);
+    box.appendChild(sec);
+  }
+
+  if (keep) {
+    const el = box.querySelector(`[data-key="${keep.key}"]`);
+    if (el) { el.value = keep.value; el.focus(); try { el.setSelectionRange(keep.sel, keep.sel); } catch { /* noop */ } }
+  }
+}
+
+/* ----------------------- Modale : commentaires et activité ------------------- */
+
+function buildActivityItem(a, withCard) {
+  const li = document.createElement('li');
+  li.className = 'feed-item feed-activity';
+  li.appendChild(avatar(a.member_initials, a.member_color, a.member_name));
+  const body = document.createElement('div');
+  body.className = 'feed-body';
+  const line = document.createElement('div');
+  const who = document.createElement('strong');
+  who.textContent = a.member_name || 'Quelqu’un';
+  line.append(who, document.createTextNode(' ' + a.text));
+  if (withCard && a.card_title) {
+    const c = document.createElement('button');
+    c.type = 'button';
+    c.className = 'feed-card-link';
+    c.textContent = a.card_title;
+    c.addEventListener('click', () => openModal(a.card_id));
+    line.append(document.createTextNode(' — '), c);
+  }
+  const when = document.createElement('time');
+  when.className = 'feed-when';
+  when.dateTime = a.created_at;
+  when.textContent = fmtWhen(a.created_at);
+  body.append(line, when);
+  li.appendChild(body);
+  return li;
+}
+
+function buildCommentItem(co) {
+  const li = document.createElement('li');
+  li.className = 'feed-item feed-comment';
+  li.dataset.commentId = co.id;
+  li.appendChild(avatar(co.member_initials, co.member_color, co.member_name));
+  const body = document.createElement('div');
+  body.className = 'feed-body';
+  const head = document.createElement('div');
+  const who = document.createElement('strong');
+  who.textContent = co.member_name || 'Quelqu’un';
+  const when = document.createElement('time');
+  when.className = 'feed-when';
+  when.dateTime = co.created_at;
+  when.textContent = fmtWhen(co.created_at) + (co.edited_at ? ' (modifié)' : '');
+  head.append(who, document.createTextNode(' '), when);
+  const bubble = document.createElement('div');
+  bubble.className = 'comment-bubble';
+  bubble.textContent = co.text;
+  body.append(head, bubble);
+
+  const mine = co.member_id === state.userId;
+  if (mine || isAdmin()) {
+    const actions = document.createElement('div');
+    actions.className = 'comment-actions';
+    if (mine) {
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.textContent = 'Modifier';
+      edit.addEventListener('click', () => startCommentEdit(bubble, co));
+      actions.appendChild(edit);
+    }
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.textContent = 'Supprimer';
+    del.addEventListener('click', async () => {
+      if (!confirm('Supprimer ce commentaire ?')) return;
+      const res = await api('DELETE', `/api/comments/${co.id}`);
+      if (res.ok) refreshSoon(); else toast('Suppression refusée');
+    });
+    actions.appendChild(del);
+    body.appendChild(actions);
+  }
+  li.appendChild(body);
+  return li;
+}
+
+function startCommentEdit(bubble, co) {
+  const ta = document.createElement('textarea');
+  ta.className = 'comment-edit';
+  ta.value = co.text;
+  ta.rows = 2;
+  bubble.replaceWith(ta);
+  ta.focus();
+  const finish = async (commit) => {
+    const v = ta.value.trim();
+    if (commit && v && v !== co.text) {
+      const res = await api('PATCH', `/api/comments/${co.id}`, { text: v });
+      if (!res.ok) toast('Modification refusée');
+    }
+    loadModalDetail();
+    refreshSoon();
+  };
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); finish(true); }
+    if (e.key === 'Escape') { e.stopPropagation(); finish(false); }
+  });
+  ta.addEventListener('blur', () => finish(true), { once: true });
+}
+
+function renderFeed() {
+  const detail = state.modalDetail;
+  if (!detail) return;
+  const toggle = $('#modal-activity-toggle');
+  toggle.textContent = state.showActivity ? 'Masquer les détails' : 'Afficher les détails';
+  toggle.setAttribute('aria-pressed', String(state.showActivity));
+  // Un commentaire en cours d'édition ne doit pas être écrasé
+  if ($('#modal-feed .comment-edit')) return;
+  const items = detail.comments.map((c) => ({ at: c.created_at, el: () => buildCommentItem(c) }));
+  if (state.showActivity) {
+    for (const a of detail.activity) items.push({ at: a.created_at, el: () => buildActivityItem(a, false) });
+  }
+  items.sort((x, y) => (x.at < y.at ? 1 : x.at > y.at ? -1 : 0));
+  const feed = $('#modal-feed');
+  feed.textContent = '';
+  for (const it of items) feed.appendChild(it.el());
+}
+
+/* ------------------------------ Modale : copie -------------------------------- */
+
+function openCopyPanel() {
+  const f = findCard(state.modalCardId);
+  if (!f) return;
+  const panel = $('#modal-copy-panel');
+  $('#copy-title').value = f.card.title;
+  const sel = $('#copy-list');
+  sel.textContent = '';
+  for (const l of state.lists) {
+    const o = document.createElement('option');
+    o.value = l.id;
+    o.textContent = l.name;
+    sel.appendChild(o);
+  }
+  sel.value = String(f.list.id);
+  panel.hidden = false;
+  $('#copy-title').focus();
+}
+
+/* -------------------------------- Notifications ------------------------------ */
+
+async function loadNotifications() {
+  const res = await fetch(`/api/members/${state.userId}/notifications`);
+  if (!res.ok) return;
+  state.notifications = await res.json();
+  renderNotifications();
+}
+
+function renderNotifications() {
+  const { unread, notifications } = state.notifications;
+  const badge = $('#notif-count');
+  badge.hidden = !unread;
+  badge.textContent = unread > 9 ? '9+' : String(unread);
+  $('#btn-notif').title = unread ? `${unread} notification${unread > 1 ? 's' : ''} non lue${unread > 1 ? 's' : ''}` : 'Notifications';
+  const list = $('#notif-list');
+  list.textContent = '';
+  if (!notifications.length) {
+    const li = document.createElement('li');
+    li.className = 'feed-empty';
+    li.textContent = 'Rien de nouveau.';
+    list.appendChild(li);
+    return;
+  }
+  for (const n of notifications) {
+    const li = document.createElement('li');
+    li.className = 'notif-item' + (n.read ? '' : ' is-unread');
+    li.appendChild(avatar(n.actor_initials, n.actor_color));
+    const body = document.createElement('button');
+    body.type = 'button';
+    body.className = 'notif-body';
+    const t = document.createElement('span');
+    t.textContent = n.text;
+    const when = document.createElement('time');
+    when.className = 'feed-when';
+    when.textContent = fmtWhen(n.created_at);
+    body.append(t, when);
+    body.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!n.read) await api('POST', `/api/members/${state.userId}/notifications/read`, { ids: [n.id] });
+      $('#popover-notif').hidden = true;
+      if (n.card_id && String(n.board_id) === String(state.boardId)) openModal(n.card_id);
+      loadNotifications();
+    });
+    li.appendChild(body);
+    list.appendChild(li);
+  }
 }
 
 async function patchCardInModal(body) {
   if (!state.modalCardId) return;
   const res = await fetch(`/api/cards/${state.modalCardId}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: jsonHeaders(),
     body: JSON.stringify(body)
   });
   if (res.ok) refreshSoon();
@@ -700,7 +1102,8 @@ function wireStaticUI() {
   userSel.addEventListener('change', () => {
     state.userId = Number(userSel.value);
     localStorage.setItem('laboite.user', String(state.userId));
-    if (state.modalCardId) { const f = findCard(state.modalCardId); if (f) fillModal(f.card, f.list); }
+    if (state.modalCardId) { const f = findCard(state.modalCardId); if (f) fillModal(f.card, f.list); renderFeed(); }
+    loadNotifications();
   });
 
   // Titre du tableau
@@ -720,7 +1123,7 @@ function wireStaticUI() {
       if (commit && name && name !== state.board.name) {
         await fetch(`/api/boards/${state.boardId}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: jsonHeaders(),
           body: JSON.stringify({ name })
         });
       }
@@ -761,19 +1164,35 @@ function wireStaticUI() {
   // Popovers
   const popF = $('#popover-filter');
   const popM = $('#popover-menu');
+  const popN = $('#popover-notif');
   $('#btn-filter').addEventListener('click', (e) => {
     e.stopPropagation();
     popM.hidden = true;
+    popN.hidden = true;
     popF.hidden = !popF.hidden;
   });
   $('#btn-main-menu').addEventListener('click', (e) => {
     e.stopPropagation();
     popF.hidden = true;
+    popN.hidden = true;
     renderMenuPopover();
     popM.hidden = !popM.hidden;
+    if (!popM.hidden) loadBoardActivity();
+  });
+  $('#btn-notif').addEventListener('click', (e) => {
+    e.stopPropagation();
+    popF.hidden = true;
+    popM.hidden = true;
+    popN.hidden = !popN.hidden;
+    if (!popN.hidden) loadNotifications();
+  });
+  $('#notif-read-all').addEventListener('click', async (e) => {
+    e.stopPropagation();
+    await api('POST', `/api/members/${state.userId}/notifications/read`, {});
+    loadNotifications();
   });
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.popover')) { popF.hidden = true; popM.hidden = true; }
+    if (!e.target.closest('.popover')) { popF.hidden = true; popM.hidden = true; popN.hidden = true; }
   });
   $('#filter-clear').addEventListener('click', () => {
     state.filters.labels.clear();
@@ -829,9 +1248,66 @@ function wireStaticUI() {
   archiveBtn.addEventListener('click', async () => {
     const id = state.modalCardId;
     if (!id) return;
-    const res = await fetch(`/api/cards/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/cards/${id}`, { method: 'DELETE', headers: jsonHeaders() });
     closeModal();
     if (res.ok) { toast('Carte mise à la corbeille'); refreshSoon(); }
+  });
+
+  // Checklists
+  $('#modal-add-checklist').addEventListener('click', async () => {
+    if (!state.modalCardId) return;
+    const res = await api('POST', `/api/cards/${state.modalCardId}/checklists`, { name: 'Checklist' });
+    if (!res.ok) return;
+    const { checklist } = await res.json();
+    await loadModalDetail();
+    const input = $(`[data-key="cl-add-${checklist.id}"]`);
+    if (input) input.focus();
+    refreshSoon();
+  });
+
+  // Commentaires
+  const commentInput = $('#modal-comment-input');
+  const commentSave = $('#modal-comment-save');
+  commentInput.addEventListener('input', () => { commentSave.disabled = !commentInput.value.trim(); });
+  const sendComment = async () => {
+    const text = commentInput.value.trim();
+    if (!text || !state.modalCardId) return;
+    commentSave.disabled = true;
+    const res = await api('POST', `/api/cards/${state.modalCardId}/comments`, { text });
+    if (res.ok) { commentInput.value = ''; loadModalDetail(); refreshSoon(); }
+    else { toast('Commentaire non enregistré'); commentSave.disabled = false; }
+  };
+  commentSave.addEventListener('click', sendComment);
+  commentInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendComment(); }
+  });
+  $('#modal-activity-toggle').addEventListener('click', () => {
+    state.showActivity = !state.showActivity;
+    try { localStorage.setItem('laboite.showActivity', state.showActivity ? '1' : '0'); } catch { /* noop */ }
+    renderFeed();
+  });
+
+  // Copie
+  $('#modal-copy').addEventListener('click', openCopyPanel);
+  $('#copy-cancel').addEventListener('click', () => { $('#modal-copy-panel').hidden = true; });
+  $('#modal-copy-panel').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!state.modalCardId) return;
+    const res = await api('POST', `/api/cards/${state.modalCardId}/copy`, {
+      title: $('#copy-title').value.trim(),
+      list_id: Number($('#copy-list').value),
+      keep: {
+        checklists: $('#copy-keep-checklists').checked,
+        labels: $('#copy-keep-labels').checked,
+        members: $('#copy-keep-members').checked
+      }
+    });
+    if (!res.ok) { toast('Copie impossible'); return; }
+    const { card } = await res.json();
+    $('#modal-copy-panel').hidden = true;
+    toast('Carte copiée');
+    await refresh();
+    openModal(card.id);
   });
 }
 
@@ -866,7 +1342,7 @@ function openNewListComposer() {
     if (!name) { input.focus(); return; }
     await fetch('/api/lists', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
       body: JSON.stringify({ board_id: Number(state.boardId), name })
     });
     closeNewListComposer();
@@ -883,7 +1359,16 @@ function closeNewListComposer() {
 
 function connectSSE() {
   const es = new EventSource(`/api/board/${state.boardId}/events`);
-  es.onmessage = () => refreshSoon();
+  es.onmessage = (e) => {
+    let msg = null;
+    try { msg = JSON.parse(e.data); } catch { /* commentaire SSE */ }
+    if (msg && msg.type === 'notification') {
+      if (!msg.members || msg.members.includes(state.userId)) loadNotificationsSoon();
+      return;
+    }
+    refreshSoon();
+    if (msg && msg.type === 'card') loadNotificationsSoon();
+  };
 }
 
 /* --------------------------------- Boot ---------------------------------- */
@@ -903,6 +1388,7 @@ async function boot() {
   }
   connectSSE();
   wireStaticUI();
+  loadNotifications();
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
