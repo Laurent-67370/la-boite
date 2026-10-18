@@ -298,7 +298,7 @@ app.post('/api/auth/login', (req, res) => {
   const expires = new Date(Date.now() + SESSION_DAYS * 86400 * 1000).toISOString();
   db.prepare('INSERT INTO sessions (token_hash, member_id, expires_at) VALUES (?,?,?)').run(auth.tokenHash(token), m.id, expires);
   setSessionCookie(req, res, token, SESSION_DAYS * 86400);
-  res.json({ member: db.prepare('SELECT id, name, initials, color FROM members WHERE id = ?').get(m.id) });
+  res.json({ member: db.prepare('SELECT id, name, initials, color, role FROM members WHERE id = ?').get(m.id) });
 });
 
 app.post('/api/auth/logout', (req, res) => {
