@@ -4,7 +4,7 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 
 ![La Boîte — vue mobile](docs/capture-mobile.png)
 
-## Fonctionnalités (v1.5.0)
+## Fonctionnalités (v1.6.0)
 
 - **Board** : listes avec compte de cartes et **jeton de limite WIP** (`2/10` — vert, orange, rouge selon le seuil), repli d'une liste (⤢)
 - **Cartes** : titre, description (badge 📝), **couverture colorée**, **échéance** (badge orange/rouge si passée, vert si terminée ✓), **étiquettes** (chips colorées, nom au survol), **membres** (initiales colorées)
@@ -15,6 +15,8 @@ Tableau kanban simple et léger — listes, cartes, étiquettes, échéances —
 - **Accès par code** : chaque membre se connecte avec son code personnel et peut le changer depuis l'application (clic sur son nom) ; session par cookie `HttpOnly` (30 jours), aucune donnée ni API accessible sans session
 - **Glisser-déposer** : cartes entre listes, réordonnancement de cartes ET de listes (positions réelles) ; au doigt sur mobile par appui long
 - **Dates** : début et échéance (badge `📅 20 oct. → 5 nov.`)
+- **Vues** : Tableau, Calendrier (échéances du mois), Liste triable, Mes cartes (tous tableaux)
+- **Checklists assignables** (élément confié à un membre, notifié) · **export CSV** · **compte invité** en lecture seule
 - **Raccourcis clavier** : `/` recherche, `n` nouvelle carte, `f` filtre, `?` aide, `Échap` ferme
 - **Recherche / filtre** : titre, description, étiquette, membre, commentaire, élément de checklist, échéance
 - **Corbeille** : archivage + restauration des cartes et des listes (une liste revient avec toutes ses cartes)
@@ -35,7 +37,7 @@ node scripts/set-code.cjs Marina 12345678   # ou code choisi (6 caractères mini
 npm start          # http://localhost:3230 (base seedée automatiquement au premier lancement)
 ```
 
-Sans code défini, un membre ne peut pas se connecter. `set-code` ferme aussi les sessions ouvertes du membre (utile en cas de code compromis).
+Sans code défini, un membre ne peut pas se connecter. Compte invité (lecture seule, export compris) : `node scripts/set-code.cjs Invité --guest`. `set-code` ferme aussi les sessions ouvertes du membre (utile en cas de code compromis).
 
 Variables :
 - `PORT` (3230 par défaut)
@@ -46,7 +48,7 @@ Variables :
 ## Tests
 
 ```bash
-npm test     # 78 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
+npm test     # 85 contrôles Playwright (API, UI, SSE, drag&drop, corbeille, checklists, commentaires, notifications…)
 CHROMIUM_PATH=/chemin/vers/chrome npm test   # si le Chromium de Playwright n'est pas installé
 node scripts/visual-sanity.cjs   # captures + drag de listes + erreurs de page (instance de test jetable)
 ```
@@ -68,13 +70,15 @@ La suite tourne aussi sur GitHub Actions à chaque PR et sur `main` (`.github/wo
 | `POST /api/cards/:id/unarchive` | restaurer depuis la corbeille |
 | `GET /api/cards/:id` | détail : checklists, commentaires, activité |
 | `POST /api/cards/:id/checklists` · `PATCH/DELETE /api/checklists/:id` | checklists |
-| `POST /api/checklists/:id/items` · `PATCH/DELETE /api/checkitems/:id` | éléments (nom, coché, position) |
+| `POST /api/checklists/:id/items` · `PATCH/DELETE /api/checkitems/:id` | éléments (nom, coché, position, `assignee_id`) |
 | `POST /api/cards/:id/comments` · `PATCH/DELETE /api/comments/:id` | commentaires |
 | `POST /api/cards/:id/copy` | copier une carte |
 | `POST /api/cards/:id/attachments` | joindre un fichier (corps brut + `X-File-Name`) ou un lien (`{url}`) |
 | `GET /api/attachments/:id/file` · `DELETE /api/attachments/:id` | télécharger / retirer |
 | `POST /api/cards/:id/votes` | voter / retirer son vote (`{remove:true}`) |
 | `GET /api/board/:id/activity` | journal d'activité du tableau |
+| `GET /api/board/:id/export.csv` | export CSV des cartes actives |
+| `GET /api/me/cards` | mes cartes (membre ou élément de checklist confié), tous tableaux |
 | `GET /api/members/:id/notifications` · `POST …/notifications/read` | notifications 🔔 |
 | `GET /api/board/:id/search?q=` | recherche |
 | `GET /api/board/:id/events` | flux SSE temps réel |

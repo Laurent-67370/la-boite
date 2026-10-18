@@ -36,6 +36,13 @@
       <span class="board-chip" id="board-chip">Démo</span>
       <span class="board-chip board-template-chip" id="board-template-chip" title="Tableau modèle : sert de base à de nouveaux tableaux" hidden>Modèle</span>
       <span class="board-wip" id="board-wip" hidden></span>
+      <span class="board-chip readonly-chip" id="readonly-chip" title="Compte invité : consultation uniquement" hidden>👁 Lecture seule</span>
+    </div>
+    <div class="view-switch" id="view-switch" role="tablist" aria-label="Vue">
+      <button type="button" role="tab" data-view="board" title="Tableau"><span aria-hidden="true">▦</span><span class="vs-label"> Tableau</span></button>
+      <button type="button" role="tab" data-view="calendar" title="Calendrier des échéances"><span aria-hidden="true">📅</span><span class="vs-label"> Calendrier</span></button>
+      <button type="button" role="tab" data-view="list" title="Liste triable"><span aria-hidden="true">☰</span><span class="vs-label"> Liste</span></button>
+      <button type="button" role="tab" data-view="mine" title="Mes cartes, tous tableaux"><span aria-hidden="true">👤</span><span class="vs-label"> Mes cartes</span></button>
     </div>
     <div class="board-actions">
       <button id="btn-filter" class="btn btn-glass" type="button" title="Filtrer les cartes">◫ Filtrer</button>
@@ -88,6 +95,7 @@
     <div class="popover" id="popover-menu" hidden>
       <div class="popover-title">La Boîte</div>
       <div id="menu-stats" class="menu-stats"></div>
+      <a id="menu-export" class="btn btn-light btn-sm menu-export" href="#" download>⬇ Exporter les cartes (CSV)</a>
       <div class="filter-heading">Tableaux</div>
       <ul id="menu-boards" class="menu-boards"></ul>
       <form id="new-board-form" class="menu-inline-form">
@@ -112,6 +120,7 @@
   <main class="board-canvas" id="board-canvas">
     <div class="board-scroller" id="board-scroller"></div>
     <button id="add-list-card" class="add-list-ghost" type="button" hidden>+ Ajouter une liste</button>
+    <section class="view-alt" id="view-alt" hidden aria-live="polite"></section>
   </main>
 
   <div class="modal-overlay" id="modal-overlay" hidden>

@@ -1,5 +1,20 @@
 # Changelog — La Boîte
 
+## v1.6.0 — 2026-10-18
+
+Fonctions génériques reprises de Suivi Fournisseurs (adaptées à La Boîte, sans le métier fournisseur).
+
+- **Vues** : sélecteur ▦ Tableau · 📅 Calendrier · ☰ Liste · 👤 Mes cartes, mémorisé dans le navigateur
+  - **Calendrier** : mois en cours (lundi → dimanche), cartes posées sur leur échéance, couleur de statut (en retard, terminée), 3 par jour puis « +N autres », clic → carte ; mêmes filtres et recherche que le tableau
+  - **Liste** : tableau triable (carte, liste, début, échéance, membres, étiquettes, checklist), clic → carte, filtres et recherche appliqués
+  - **Mes cartes** : tous tableaux confondus, les cartes dont je suis membre ou dont un élément de checklist m'est confié (non coché), groupées En retard / 7 prochains jours / Plus tard / Sans échéance
+- **Éléments de checklist assignables** : « 👤 » devant chaque élément ; le membre est notifié, l'attribution est journalisée, la carte remonte dans ses « Mes cartes »
+- **Compte invité (lecture seule)** : `node scripts/set-code.cjs Invité --guest` ; tout est visible, export compris, mais le serveur refuse toute écriture (403) et l'interface masque les commandes (pastille « 👁 Lecture seule ») ; l'invité n'apparaît pas dans les membres assignables ni mentionnables
+- **Export CSV** du tableau (menu « … ») : une ligne par carte active, `;` et BOM UTF-8 pour Excel FR, formules neutralisées (`=`, `+`, `-`, `@` préfixés d'une apostrophe)
+- Migration additive : `members.role`, `check_items.assignee_id`
+- Service worker : cache `la-boite-v7`
+- Tests : 85/85
+
 ## v1.5.0 — 2026-10-17
 
 **Confort au quotidien**

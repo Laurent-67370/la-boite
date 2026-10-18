@@ -11,6 +11,9 @@ const state = {
   archived: [],
   archivedLists: [],
   backgrounds: [],
+  view: (() => { try { return localStorage.getItem('laboite.view') || 'board'; } catch { return 'board'; } })(),
+  calMonth: null, // premier jour du mois affiché (vue Calendrier)
+  listSort: { key: 'due', dir: 1 },
   modalDetail: null, // {card, checklists, comments, activity} de la carte ouverte
   showActivity: localStorage.getItem('laboite.showActivity') === '1',
   notifications: { unread: 0, notifications: [] },
@@ -62,6 +65,20 @@ function api(method, url, body) {
     headers: jsonHeaders(),
     body: body === undefined ? undefined : JSON.stringify(body)
   });
+}
+
+// Compte invité : consultation seule (le serveur refuse de toute façon les écritures)
+function isReadOnly() {
+  return !!state.me && state.me.role === 'guest';
+}
+
+// En lecture seule, tous les contrôles de la carte ouverte sont désactivés (fermer et « détails » exceptés)
+function lockModal() {
+  if (!isReadOnly()) return;
+  for (const el of $('#card-modal').querySelectorAll('input, textarea, select, button')) {
+    if (el.id === 'modal-close' || el.id === 'modal-activity-toggle') continue;
+    el.disabled = true;
+  }
 }
 
 function fmtWhen(iso) {
@@ -189,6 +206,7 @@ function renderBoard() {
   }
 
   canvas.scrollLeft = keepScroll;
+  renderView();
 }
 
 function buildList(list) {
@@ -204,7 +222,7 @@ function buildList(list) {
   nameBtn.className = 'list-name';
   nameBtn.textContent = list.name;
   nameBtn.title = 'Renommer la liste';
-  nameBtn.addEventListener('click', () => startListRename(wrap, list));
+  nameBtn.addEventListener('click', () => { if (!isReadOnly()) startListRename(wrap, list); });
   const count = document.createElement('span');
   count.className = 'list-count' + wipClass(list);
   count.textContent = list.wip_limit ? `${list.cards.length}/${list.wip_limit}` : String(list.cards.length);
@@ -243,7 +261,7 @@ function buildList(list) {
   spine.addEventListener('click', () => patchList(list.id, { collapsed: 0 }));
   wrap.appendChild(spine);
 
-  if (list.collapsed) { wireListDrag(wrap, list, head); return wrap; }
+  if (list.collapsed) { if (!isReadOnly()) wireListDrag(wrap, list, head); return wrap; }
 
   // Cartes
   const cardsBox = document.createElement('div');
@@ -263,7 +281,7 @@ function buildList(list) {
   composerBox.appendChild(buildComposerLaunch(list));
   wrap.appendChild(composerBox);
 
-  wireListDrag(wrap, list, head);
+  if (!isReadOnly()) wireListDrag(wrap, list, head);
   return wrap;
 }
 
@@ -366,7 +384,7 @@ function buildCard(card) {
   if (badges.children.length) el.appendChild(badges);
 
   // drag & drop natif
-  el.draggable = true;
+  el.draggable = !isReadOnly();
   el.addEventListener('dragstart', (e) => {
     state.dragCardId = card.id;
     try {
@@ -376,7 +394,7 @@ function buildCard(card) {
     el.classList.add('dragging');
   });
   el.addEventListener('dragend', () => { el.classList.remove('dragging'); state.dragCardId = null; clearSlots(); });
-  wireTouchDrag(el, card);
+  if (!isReadOnly()) wireTouchDrag(el, card);
 
   el.addEventListener('click', () => openModal(card.id));
   return el;
@@ -716,6 +734,284 @@ function wireListDrag(wrap, list, head) {
   });
 }
 
+/* ---------------------------------- Vues ---------------------------------- */
+
+const VIEWS = ['board', 'calendar', 'list', 'mine'];
+const altBox = document.getElementById('view-alt');
+
+function setView(view) {
+  state.view = VIEWS.includes(view) ? view : 'board';
+  try { localStorage.setItem('laboite.view', state.view); } catch { /* noop */ }
+  renderView();
+}
+
+function renderView() {
+  const v = state.view;
+  for (const b of document.querySelectorAll('#view-switch [data-view]')) {
+    b.setAttribute('aria-selected', String(b.dataset.view === v));
+  }
+  const isBoard = v === 'board';
+  scroller.hidden = !isBoard;
+  addListBtn.hidden = !isBoard || isReadOnly();
+  altBox.hidden = isBoard;
+  canvas.classList.toggle('is-alt-view', !isBoard);
+  if (v === 'calendar') renderCalendar();
+  else if (v === 'list') renderListView();
+  else if (v === 'mine') renderMine();
+}
+
+// Cartes actives du tableau, filtres et recherche appliqués
+function visibleCards() {
+  const out = [];
+  for (const list of state.lists) for (const card of list.cards) if (!cardVisiblyHidden(card)) out.push({ card, list });
+  return out;
+}
+
+function dueClass(card) {
+  if (!card.due_at) return '';
+  if (card.due_complete) return ' due-complete';
+  return isPast(card.due_at) ? ' due-past' : '';
+}
+
+function dayKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function renderCalendar() {
+  if (!state.calMonth) { const n = new Date(); state.calMonth = new Date(n.getFullYear(), n.getMonth(), 1); }
+  const month = state.calMonth;
+  const byDay = new Map();
+  let undated = 0;
+  for (const { card, list } of visibleCards()) {
+    if (!card.due_at) { undated++; continue; }
+    const k = String(card.due_at).slice(0, 10);
+    if (!byDay.has(k)) byDay.set(k, []);
+    byDay.get(k).push({ card, list });
+  }
+  altBox.textContent = '';
+  const head = document.createElement('div');
+  head.className = 'cal-head';
+  const prev = document.createElement('button');
+  prev.type = 'button'; prev.className = 'btn btn-glass btn-sm'; prev.textContent = '‹'; prev.title = 'Mois précédent';
+  prev.addEventListener('click', () => { state.calMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1); renderCalendar(); });
+  const next = document.createElement('button');
+  next.type = 'button'; next.className = 'btn btn-glass btn-sm'; next.textContent = '›'; next.title = 'Mois suivant';
+  next.addEventListener('click', () => { state.calMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1); renderCalendar(); });
+  const today = document.createElement('button');
+  today.type = 'button'; today.className = 'btn btn-glass btn-sm'; today.textContent = 'Aujourd’hui';
+  today.addEventListener('click', () => { state.calMonth = null; renderCalendar(); });
+  const title = document.createElement('h2');
+  title.className = 'cal-title';
+  title.textContent = month.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const note = document.createElement('span');
+  note.className = 'cal-note';
+  note.textContent = undated ? `${undated} carte${undated > 1 ? 's' : ''} sans échéance` : '';
+  head.append(prev, title, next, today, note);
+
+  const grid = document.createElement('div');
+  grid.className = 'cal-grid';
+  for (const d of ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.']) {
+    const h = document.createElement('div');
+    h.className = 'cal-dow';
+    h.textContent = d;
+    grid.appendChild(h);
+  }
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const start = new Date(first);
+  start.setDate(1 - ((first.getDay() + 6) % 7)); // lundi de la première semaine
+  const todayKey = dayKey(new Date());
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    if (i >= 35 && d.getMonth() !== month.getMonth()) break; // pas de 6e semaine vide
+    const key = dayKey(d);
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' + (d.getMonth() !== month.getMonth() ? ' is-out' : '') + (key === todayKey ? ' is-today' : '');
+    cell.dataset.day = key;
+    const num = document.createElement('span');
+    num.className = 'cal-num';
+    num.textContent = d.getDate();
+    cell.appendChild(num);
+    const items = byDay.get(key) || [];
+    items.forEach(({ card, list }, idx) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'cal-card' + dueClass(card) + (idx >= 3 ? ' is-extra' : '');
+      chip.dataset.cardId = card.id;
+      chip.textContent = card.title;
+      chip.title = `${card.title} — ${list.name}`;
+      chip.addEventListener('click', () => openModal(card.id));
+      cell.appendChild(chip);
+    });
+    if (items.length > 3) {
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'cal-more';
+      more.textContent = `+${items.length - 3} autre${items.length - 3 > 1 ? 's' : ''}`;
+      more.addEventListener('click', () => { cell.classList.add('is-expanded'); more.remove(); });
+      cell.appendChild(more);
+    }
+    grid.appendChild(cell);
+  }
+  altBox.append(head, grid);
+}
+
+const LIST_COLUMNS = [
+  { key: 'title', label: 'Carte', get: (c) => c.card.title.toLowerCase() },
+  { key: 'list', label: 'Liste', get: (c) => state.lists.findIndex((l) => l.id === c.list.id) },
+  { key: 'start', label: 'Début', get: (c) => c.card.start_at || '' },
+  { key: 'due', label: 'Échéance', get: (c) => c.card.due_at || '' },
+  { key: 'members', label: 'Membres', get: (c) => c.card.members.map((m) => m.name).join(',') },
+  { key: 'labels', label: 'Étiquettes', get: (c) => c.card.labels.map((l) => l.name).join(',') },
+  { key: 'check', label: 'Checklist', get: (c) => (c.card.checklist && c.card.checklist.total ? c.card.checklist.done / c.card.checklist.total : -1) }
+];
+
+function renderListView() {
+  const rows = visibleCards();
+  const col = LIST_COLUMNS.find((c) => c.key === state.listSort.key) || LIST_COLUMNS[3];
+  const dir = state.listSort.dir;
+  rows.sort((a, b) => {
+    const x = col.get(a); const y = col.get(b);
+    // Les valeurs vides vont toujours en fin de tableau
+    if (x === '' && y !== '') return 1;
+    if (y === '' && x !== '') return -1;
+    return (x < y ? -1 : x > y ? 1 : 0) * dir;
+  });
+  altBox.textContent = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'list-view-wrap';
+  const table = document.createElement('table');
+  table.className = 'list-view';
+  const thead = document.createElement('thead');
+  const tr = document.createElement('tr');
+  for (const c of LIST_COLUMNS) {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.sort = c.key;
+    b.textContent = c.label + (c.key === col.key ? (dir > 0 ? ' ▲' : ' ▼') : '');
+    th.setAttribute('aria-sort', c.key === col.key ? (dir > 0 ? 'ascending' : 'descending') : 'none');
+    b.addEventListener('click', () => {
+      state.listSort = { key: c.key, dir: c.key === col.key ? -dir : 1 };
+      renderListView();
+    });
+    th.appendChild(b);
+    tr.appendChild(th);
+  }
+  thead.appendChild(tr);
+  const tbody = document.createElement('tbody');
+  for (const { card, list } of rows) {
+    const row = document.createElement('tr');
+    row.dataset.cardId = card.id;
+    row.tabIndex = 0;
+    row.addEventListener('click', () => openModal(card.id));
+    row.addEventListener('keydown', (e) => { if (e.key === 'Enter') openModal(card.id); });
+    const cells = [
+      card.title,
+      list.name,
+      card.start_at ? fmtDate(card.start_at + 'T00:00') : '',
+      card.due_at ? fmtDate(card.due_at) : '',
+      null, null,
+      card.checklist && card.checklist.total ? `${card.checklist.done}/${card.checklist.total}` : ''
+    ];
+    cells.forEach((v, i) => {
+      const td = document.createElement('td');
+      if (i === 3 && card.due_at) td.className = 'lv-due' + dueClass(card);
+      if (i === 4) for (const m of card.members) td.appendChild(avatar(m.initials, m.color, m.name));
+      else if (i === 5) {
+        for (const l of card.labels) {
+          const chip = document.createElement('span');
+          chip.className = 'lv-label';
+          chip.style.background = l.color;
+          chip.textContent = l.name;
+          td.appendChild(chip);
+        }
+      } else td.textContent = v;
+      row.appendChild(td);
+    });
+    tbody.appendChild(row);
+  }
+  table.append(thead, tbody);
+  wrap.appendChild(table);
+  if (!rows.length) {
+    const empty = document.createElement('p');
+    empty.className = 'view-empty';
+    empty.textContent = 'Aucune carte ne correspond aux filtres.';
+    wrap.appendChild(empty);
+  }
+  altBox.appendChild(wrap);
+}
+
+async function renderMine() {
+  const res = await fetch('/api/me/cards');
+  if (!res.ok || state.view !== 'mine') return;
+  const { cards } = await res.json();
+  const now = new Date();
+  const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+  const groups = [
+    { key: 'late', title: '🔴 En retard', items: [] },
+    { key: 'week', title: '🟠 7 prochains jours', items: [] },
+    { key: 'later', title: '📅 Plus tard', items: [] },
+    { key: 'none', title: '⚪ Sans échéance', items: [] }
+  ];
+  for (const c of cards) {
+    if (!c.due_at) groups[3].items.push(c);
+    else if (!c.due_complete && isPast(c.due_at)) groups[0].items.push(c);
+    else if (new Date(c.due_at) <= weekEnd) groups[1].items.push(c);
+    else groups[2].items.push(c);
+  }
+  altBox.textContent = '';
+  const box = document.createElement('div');
+  box.className = 'mine-view';
+  const intro = document.createElement('p');
+  intro.className = 'mine-intro';
+  intro.textContent = cards.length
+    ? `${cards.length} carte${cards.length > 1 ? 's' : ''} où tu es membre ou as un élément de checklist à faire, tous tableaux confondus.`
+    : 'Rien pour toi pour l’instant : aucune carte dont tu es membre, aucun élément de checklist qui t’est confié.';
+  box.appendChild(intro);
+  for (const g of groups) {
+    if (!g.items.length) continue;
+    const sec = document.createElement('section');
+    sec.className = 'mine-group';
+    sec.dataset.group = g.key;
+    const h = document.createElement('h3');
+    h.textContent = `${g.title} (${g.items.length})`;
+    sec.appendChild(h);
+    for (const c of g.items) {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'mine-card';
+      item.dataset.cardId = c.id;
+      const t = document.createElement('span');
+      t.className = 'mine-title';
+      t.textContent = c.title;
+      const where = document.createElement('span');
+      where.className = 'mine-where';
+      where.textContent = `${c.board_name} · ${c.list_name}`;
+      item.append(t, where);
+      if (c.due_at) {
+        const due = document.createElement('span');
+        due.className = 'badge-due' + dueClass(c);
+        due.textContent = '📅 ' + fmtDate(c.due_at);
+        item.appendChild(due);
+      }
+      if (c.my_items.length) {
+        const mi = document.createElement('span');
+        mi.className = 'mine-items';
+        mi.textContent = '☐ ' + c.my_items.map((x) => x.name).join(' · ');
+        item.appendChild(mi);
+      }
+      item.addEventListener('click', () => {
+        if (String(c.board_id) === String(state.boardId)) openModal(c.id);
+        else location.href = `/?board=${c.board_id}&card=${c.id}`;
+      });
+      sec.appendChild(item);
+    }
+    box.appendChild(sec);
+  }
+  altBox.appendChild(box);
+}
+
 /* ------------------------------ Popovers -------------------------------- */
 
 function renderPopovers() {
@@ -879,6 +1175,7 @@ function renderMenuPopover() {
 }
 
 function applyVisibility() {
+  if (state.view === 'calendar' || state.view === 'list') renderView();
   for (const list of state.lists) {
     for (const card of list.cards) {
       const el = $(`.list-card[data-card-id="${card.id}"]`);
@@ -919,6 +1216,7 @@ async function loadModalDetail() {
   state.modalDetail = await res.json();
   renderAttachments();
   renderChecklists();
+  queueMicrotask(lockModal);
   renderFeed();
 }
 
@@ -999,6 +1297,7 @@ function fillModal(card, list) {
   }
 
   $('#modal-archive').hidden = !isAdmin();
+  queueMicrotask(lockModal);
 
   const voters = card.voters || [];
   const voteBtn = $('#modal-vote');
@@ -1168,13 +1467,27 @@ function renderChecklists() {
       const label = document.createElement('span');
       label.className = 'check-item-name';
       label.textContent = it.name;
+      // Attribution de l'élément à un membre (apparaît dans « Mes cartes » et le notifie)
+      const who = document.createElement('select');
+      who.className = 'item-assignee' + (it.assignee_id ? ' is-set' : '');
+      who.setAttribute('aria-label', `Confier « ${it.name} » à`);
+      who.title = it.assignee_name ? `Confié à ${it.assignee_name}` : 'Confier à…';
+      const none = new Option(it.assignee_id ? '— personne' : '👤', '');
+      who.appendChild(none);
+      for (const m of state.members) who.appendChild(new Option(m.name, String(m.id)));
+      who.value = it.assignee_id ? String(it.assignee_id) : '';
+      if (it.assignee_color) who.style.setProperty('--assignee', it.assignee_color);
+      who.addEventListener('change', async () => {
+        await api('PATCH', `/api/checkitems/${it.id}`, { assignee_id: who.value ? Number(who.value) : null });
+        refreshSoon();
+      });
       const rm = document.createElement('button');
       rm.type = 'button';
       rm.className = 'check-item-del';
       rm.title = 'Supprimer l’élément';
       rm.textContent = '✕';
       rm.addEventListener('click', async () => { await api('DELETE', `/api/checkitems/${it.id}`); refreshSoon(); });
-      li.append(cb, label, rm);
+      li.append(cb, label, who, rm);
       ul.appendChild(li);
     }
 
@@ -1408,6 +1721,12 @@ async function patchCardInModal(body) {
 /* ------------------------------- Événements ------------------------------ */
 
 function wireStaticUI() {
+  // Vues
+  for (const b of document.querySelectorAll('#view-switch [data-view]')) {
+    b.addEventListener('click', () => setView(b.dataset.view));
+  }
+  $('#menu-export').href = `/api/board/${state.boardId}/export.csv`;
+
   // Session
   $('#btn-logout').addEventListener('click', async () => {
     await fetch('/api/auth/logout', { method: 'POST', headers: jsonHeaders() });
@@ -1417,6 +1736,7 @@ function wireStaticUI() {
   // Titre du tableau
   const titleBtn = $('#board-title');
   titleBtn.addEventListener('click', () => {
+    if (isReadOnly()) return;
     const input = document.createElement('input');
     input.id = 'board-title-input';
     input.value = state.board.name;
@@ -1476,6 +1796,7 @@ function wireStaticUI() {
   const popA = $('#popover-account');
   $('#btn-account').addEventListener('click', (e) => {
     e.stopPropagation();
+    if (isReadOnly()) return; // invité : pas de changement de code
     popF.hidden = true;
     popM.hidden = true;
     popN.hidden = true;
@@ -1746,7 +2067,7 @@ function wireShortcuts() {
     if (e.key === '/') {
       e.preventDefault();
       $('#search-input').focus();
-    } else if (e.key === 'n') {
+    } else if (e.key === 'n' && !isReadOnly()) {
       const open = state.lists.filter((l) => !l.collapsed);
       const list = open.find((l) => l.id === state.hoverListId) || open[0];
       if (!list) return;
@@ -1833,6 +2154,7 @@ window.fetch = async (input, init) => {
   const res = await nativeFetch(input, init);
   const url = typeof input === 'string' ? input : input.url;
   if (res.status === 401 && !url.includes('/api/auth/')) showLogin();
+  if (res.status === 403 && isReadOnly()) toast('Compte invité : lecture seule');
   return res;
 };
 
@@ -1886,6 +2208,8 @@ function renderMe() {
   av.textContent = me.initials;
   av.style.background = me.color;
   $('#me-name').textContent = me.name;
+  document.body.classList.toggle('read-only', isReadOnly());
+  $('#readonly-chip').hidden = !isReadOnly();
 }
 
 async function boot() {
