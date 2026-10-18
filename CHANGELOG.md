@@ -1,5 +1,12 @@
 # Changelog — La Boîte
 
+## v1.6.1 — 2026-10-18
+
+- **Correctif mise à jour** : après le passage en v1.6.0, certains navigateurs (mobile surtout) affichaient la nouvelle page avec l'ancien `style.css` / `app.js` gardés par le service worker → sélecteur de vues sans style et inopérant. La page charge désormais `/style.css?v=<version>` et `/app.js?v=<version>` (version lue dans `package.json`), donc une nouvelle version n'est jamais servie depuis un ancien cache ; le service worker précharge en contournant le cache HTTP
+- Connexion : la réponse inclut le rôle, la vue invité se verrouille dès la connexion (correctif déjà poussé sur `main`, 0265bf5)
+- Service worker : cache `la-boite-v8`
+- Tests : 86/86
+
 ## v1.6.0 — 2026-10-18
 
 Fonctions génériques reprises de Suivi Fournisseurs (adaptées à La Boîte, sans le métier fournisseur).
