@@ -255,6 +255,14 @@ function migrate(db) {
     db.exec('ALTER TABLE members ADD COLUMN code_hash TEXT');
     db.exec('ALTER TABLE members ADD COLUMN code_salt TEXT');
   }
+  if (!memberCols.includes('role')) {
+    // 'member' (lecture + écriture) ou 'guest' (lecture seule)
+    db.exec("ALTER TABLE members ADD COLUMN role TEXT NOT NULL DEFAULT 'member'");
+  }
+  const itemCols = db.prepare('PRAGMA table_info(check_items)').all().map((c) => c.name);
+  if (!itemCols.includes('assignee_id')) {
+    db.exec('ALTER TABLE check_items ADD COLUMN assignee_id INTEGER REFERENCES members(id) ON DELETE SET NULL');
+  }
   const cardCols = db.prepare('PRAGMA table_info(cards)').all().map((c) => c.name);
   if (!cardCols.includes('start_at')) {
     db.exec('ALTER TABLE cards ADD COLUMN start_at TEXT');

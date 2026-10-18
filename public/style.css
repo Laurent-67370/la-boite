@@ -790,3 +790,100 @@ kbd {
   box-shadow: 0 10px 28px rgba(9, 20, 30, .35); opacity: .95;
 }
 body.touch-dragging { user-select: none; -webkit-user-select: none; }
+
+/* --------------------------------- Vues --------------------------------- */
+
+.view-switch { display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: #ffffff1c; }
+.view-switch button {
+  border: none; background: transparent; color: #f0f4f7; font: inherit; font-size: 13px;
+  padding: 5px 10px; border-radius: 7px; cursor: pointer; white-space: nowrap;
+}
+.view-switch button:hover { background: #ffffff22; }
+.view-switch button[aria-selected="true"] { background: #ffffffe6; color: var(--brand-dark); font-weight: 650; }
+.board-canvas.is-alt-view { overflow-x: hidden; overflow-y: auto; }
+.view-alt { padding: 12px 16px 24px; color: var(--ink); }
+.view-alt[hidden], .board-scroller[hidden] { display: none; }
+.view-empty, .mine-intro { color: #f0f4f7; font-size: 14px; margin: 4px 0 12px; }
+
+/* Calendrier */
+.cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #f0f4f7; flex-wrap: wrap; }
+.cal-title { margin: 0 6px; font-size: 18px; text-transform: capitalize; min-width: 150px; text-align: center; }
+.cal-note { font-size: 12.5px; opacity: .85; margin-left: auto; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-dow { color: #f0f4f7; font-size: 12px; font-weight: 650; text-align: center; padding: 2px 0; opacity: .9; }
+.cal-cell {
+  min-height: 96px; background: var(--panel); border-radius: 8px; padding: 4px; display: flex;
+  flex-direction: column; gap: 3px; min-width: 0;
+}
+.cal-cell.is-out { opacity: .55; }
+.cal-cell.is-today { box-shadow: 0 0 0 2px var(--accent) inset; }
+.cal-num { font-size: 12px; font-weight: 650; color: var(--ink-soft); padding: 0 2px; }
+.cal-card {
+  border: none; border-left: 3px solid var(--accent); border-radius: 5px; background: var(--card-bg); color: var(--card-fg);
+  font: inherit; font-size: 12px; text-align: left; padding: 3px 5px; cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 1px 1px rgba(10,22,33,.12);
+}
+.cal-card.due-past { border-left-color: var(--bad); }
+.cal-card.due-complete { border-left-color: var(--ok); text-decoration: line-through; color: var(--ink-soft); }
+.cal-card.is-extra { display: none; }
+.cal-cell.is-expanded .cal-card.is-extra { display: block; }
+.cal-more { border: none; background: transparent; color: var(--ink-soft); font: inherit; font-size: 11.5px; text-align: left; cursor: pointer; padding: 0 4px; }
+
+/* Liste */
+.list-view-wrap { overflow-x: auto; background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow); }
+.list-view { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.list-view th { text-align: left; border-bottom: 1px solid var(--hairline); padding: 0; position: sticky; top: 0; background: var(--panel-strong); }
+.list-view th button { border: none; background: transparent; color: var(--ink-soft); font: inherit; font-weight: 650; font-size: 12.5px; padding: 9px 10px; cursor: pointer; white-space: nowrap; width: 100%; text-align: left; }
+.list-view td { padding: 7px 10px; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+.list-view td:first-child { white-space: normal; font-weight: 600; min-width: 180px; }
+.list-view tbody tr { cursor: pointer; }
+.list-view tbody tr:hover, .list-view tbody tr:focus { background: rgba(56, 163, 165, .10); outline: none; }
+.list-view .member-avatar { margin-right: -4px; }
+.lv-due.due-past { color: var(--bad); font-weight: 650; }
+.lv-due.due-complete { color: var(--ok); }
+.lv-label { display: inline-block; color: #fff; font-size: 11px; font-weight: 650; border-radius: 4px; padding: 1px 6px; margin-right: 3px; }
+
+/* Mes cartes */
+.mine-view { max-width: 760px; }
+.mine-group { margin-bottom: 14px; }
+.mine-group h3 { color: #f0f4f7; font-size: 14px; margin: 0 0 6px; }
+.mine-card {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; width: 100%; text-align: left; cursor: pointer;
+  border: none; border-radius: var(--radius); background: var(--card-bg); color: var(--card-fg); font: inherit;
+  padding: 9px 12px; margin-bottom: 6px; box-shadow: var(--shadow);
+}
+.mine-title { font-weight: 650; flex: 1 1 200px; }
+.mine-where { font-size: 12px; color: var(--ink-soft); }
+.mine-items { flex-basis: 100%; font-size: 12.5px; color: var(--ink-soft); }
+
+/* Attribution d'un élément de checklist */
+.item-assignee {
+  flex: none; max-width: 120px; border: 1px solid var(--hairline); border-radius: 12px; padding: 1px 6px;
+  background: transparent; color: var(--ink-soft); font: inherit; font-size: 12px; cursor: pointer;
+}
+.item-assignee.is-set { background: var(--assignee, var(--accent)); color: #fff; border-color: transparent; font-weight: 600; }
+
+.menu-export { text-align: center; text-decoration: none; }
+.readonly-chip { background: #ffffff33; }
+.readonly-chip[hidden] { display: none; }
+
+/* Lecture seule (invité) : commandes d'écriture masquées */
+.read-only .add-card-btn, .read-only .list-composer, .read-only #add-list-card, .read-only #btn-add-list,
+.read-only .list-archive-btn, .read-only .collapse-btn, .read-only #modal-add-checklist, .read-only .check-add,
+.read-only .check-item-del, .read-only .comment-composer, .read-only .comment-actions, .read-only #modal-foot,
+.read-only .file-pick, .read-only #modal-attach-link, .read-only .attachment-del, .read-only #new-board-form,
+.read-only .menu-toggle, .read-only #from-template-form, .read-only .trash-row button,
+.read-only #modal-start-clear, .read-only #modal-due-clear { display: none !important; }
+.read-only .list-name, .read-only .account-btn { cursor: default; }
+.read-only .account-btn:hover { background: transparent; border-color: transparent; }
+
+@media (max-width: 640px) {
+  .board-header { flex-wrap: wrap; }
+  .view-switch { order: 3; width: 100%; justify-content: space-between; }
+  .view-switch button { flex: 1; padding: 6px 4px; }
+  .view-switch .vs-label { display: none; }
+  .view-alt { padding: 10px 10px 20px; }
+  .cal-cell { min-height: 64px; padding: 2px; }
+  .cal-card { font-size: 10.5px; padding: 2px 3px; }
+  .cal-note { flex-basis: 100%; margin-left: 0; }
+}

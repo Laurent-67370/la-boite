@@ -102,7 +102,7 @@ function sessionMember(req) {
   const token = parseCookies(req)[SESSION_COOKIE];
   if (!token) return null;
   return db.prepare(`
-    SELECT m.id, m.name, m.initials, m.color FROM sessions s JOIN members m ON m.id = s.member_id
+    SELECT m.id, m.name, m.initials, m.color, m.role FROM sessions s JOIN members m ON m.id = s.member_id
     WHERE s.token_hash = ? AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ','now')`).get(auth.tokenHash(token)) || null;
 }
 
@@ -226,7 +226,7 @@ function notify(card, actor, kind, text, extraIds = []) {
 // Mentions « @Prénom » ou « @INITIALES » dans un commentaire
 function mentionedMembers(text) {
   const out = [];
-  for (const m of db.prepare('SELECT id, name, initials FROM members').all()) {
+  for (const m of db.prepare("SELECT id, name, initials FROM members WHERE role != 'guest'").all()) {
     const alt = [m.name, m.initials].map((v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
     const re = new RegExp(`(^|\\s)@(${alt})(?![\\p{L}\\d])`, 'iu');
     if (re.test(text)) out.push(m.id);
@@ -243,7 +243,11 @@ const ACTIVITY_SELECT = `
 
 function cardChecklists(cardId) {
   const lists = db.prepare('SELECT id, card_id, name, pos FROM checklists WHERE card_id = ? ORDER BY pos, id').all(cardId);
-  const itemStmt = db.prepare('SELECT id, checklist_id, name, pos, checked FROM check_items WHERE checklist_id = ? ORDER BY pos, id');
+  const itemStmt = db.prepare(`
+    SELECT ci.id, ci.checklist_id, ci.name, ci.pos, ci.checked, ci.assignee_id,
+           m.name AS assignee_name, m.initials AS assignee_initials, m.color AS assignee_color
+    FROM check_items ci LEFT JOIN members m ON m.id = ci.assignee_id
+    WHERE ci.checklist_id = ? ORDER BY ci.pos, ci.id`);
   for (const cl of lists) {
     cl.items = itemStmt.all(cl.id).map((it) => ({ ...it, checked: !!it.checked }));
   }
@@ -275,7 +279,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 // Liste pour l'écran de connexion : noms et initiales seulement
 app.get('/api/auth/members', (_req, res) => {
-  res.json({ members: db.prepare('SELECT id, name, initials, color FROM members ORDER BY id').all() });
+  res.json({ members: db.prepare("SELECT id, name, initials, color, role FROM members ORDER BY role = 'guest', id").all() });
 });
 
 app.post('/api/auth/login', (req, res) => {
@@ -310,6 +314,13 @@ app.use('/api', (req, res, next) => {
   if (!member) return res.status(401).json({ error: 'auth_required' });
   req.member = member;
   next();
+});
+
+// Invité : lecture seule, toute écriture refusée côté serveur (l'interface masque aussi les commandes)
+app.use('/api', (req, res, next) => {
+  if (req.member.role !== 'guest' || req.method === 'GET' || req.method === 'HEAD') return next();
+  if (req.path === '/auth/logout') return next();
+  res.status(403).json({ error: 'read_only' });
 });
 
 app.get('/api/auth/me', (req, res) => res.json({ member: req.member }));
@@ -376,7 +387,7 @@ app.get('/api/board/:id', (req, res) => {
     });
   }
   const labels = db.prepare('SELECT id, name, color FROM labels WHERE board_id = ? ORDER BY id').all(board.id);
-  const members = db.prepare('SELECT id, name, initials, color FROM members ORDER BY id').all();
+  const members = db.prepare("SELECT id, name, initials, color FROM members WHERE role != 'guest' ORDER BY id").all();
   const archived = db.prepare(`
     SELECT c.id, c.list_id, c.title, c.archived FROM cards c
     JOIN lists l ON l.id = c.list_id
@@ -654,7 +665,7 @@ app.post('/api/cards/:id/members', (req, res) => {
   if (body.remove !== undefined && body.remove !== null && body.remove !== false) {
     db.prepare('DELETE FROM card_members WHERE card_id = ? AND member_id = ?').run(card.id, Number(body.member_id));
   } else {
-    const member = db.prepare('SELECT * FROM members WHERE id = ?').get(Number(body.member_id));
+    const member = db.prepare("SELECT * FROM members WHERE id = ? AND role != 'guest'").get(Number(body.member_id));
     if (!member) return notFound(res);
     const added = db.prepare('INSERT OR IGNORE INTO card_members (card_id, member_id) VALUES (?,?)').run(card.id, member.id);
     const actor = actorId(req);
@@ -748,6 +759,14 @@ app.patch('/api/checkitems/:id', (req, res) => {
   }
   if ('checked' in body) { updates.push('checked = ?'); values.push(body.checked ? 1 : 0); }
   if ('pos' in body && isFiniteNumber(Number(body.pos))) { updates.push('pos = ?'); values.push(Number(body.pos)); }
+  let assignee = null;
+  if ('assignee_id' in body) {
+    if (body.assignee_id !== null) {
+      assignee = db.prepare("SELECT id, name FROM members WHERE id = ? AND role != 'guest'").get(Number(body.assignee_id));
+      if (!assignee) return badReq(res, 'assignee_id inconnu');
+    }
+    updates.push('assignee_id = ?'); values.push(assignee ? assignee.id : null);
+  }
   if (!updates.length) return badReq(res, 'aucun champ');
   db.prepare(`UPDATE check_items SET ${updates.join(', ')} WHERE id = ?`).run(...values, item.id);
   const cl = getChecklist(item.checklist_id);
@@ -755,6 +774,17 @@ app.patch('/api/checkitems/:id', (req, res) => {
   if ('checked' in body && !!body.checked !== !!item.checked) {
     logActivity(boardId, cl.card_id, actorId(req), body.checked ? 'item_checked' : 'item_unchecked',
       body.checked ? `a terminé « ${item.name} »` : `a décoché « ${item.name} »`);
+  }
+  if ('assignee_id' in body && (assignee ? assignee.id : null) !== item.assignee_id) {
+    logActivity(boardId, cl.card_id, actorId(req), 'item_assigned',
+      assignee ? `a confié « ${item.name} » à ${assignee.name}` : `a retiré l’attribution de « ${item.name} »`);
+    if (assignee && assignee.id !== actorId(req)) {
+      const card = getCard(cl.card_id);
+      db.prepare('INSERT INTO notifications (member_id, board_id, card_id, actor_id, kind, text) VALUES (?,?,?,?,?,?)')
+        .run(assignee.id, boardId, card.id, actorId(req), 'item_assigned',
+          `${req.member.name} vous a confié « ${item.name} » sur « ${card.title} »`);
+      broadcast(boardId, { type: 'notification', members: [assignee.id] });
+    }
   }
   broadcast(boardId, { type: 'card', id: cl.card_id });
   const fresh = getCheckItem(item.id);
@@ -996,6 +1026,73 @@ app.post('/api/members/:id/notifications/read', (req, res) => {
   }
   const unread = db.prepare('SELECT COUNT(*) AS n FROM notifications WHERE member_id = ? AND read = 0').get(member.id).n;
   res.json({ unread });
+});
+
+/* ------------------------------- Mes cartes -------------------------------- */
+
+// Cartes de tous les tableaux où je suis membre ou titulaire d'un élément de checklist non coché
+app.get('/api/me/cards', (req, res) => {
+  const me = actorId(req);
+  const rows = db.prepare(`
+    SELECT c.id, c.title, c.start_at, c.due_at, c.due_complete, c.cover, l.id AS list_id, l.name AS list_name,
+           b.id AS board_id, b.name AS board_name,
+           EXISTS (SELECT 1 FROM card_members cm WHERE cm.card_id = c.id AND cm.member_id = @me) AS is_member
+    FROM cards c JOIN lists l ON l.id = c.list_id JOIN boards b ON b.id = l.board_id
+    WHERE c.archived = 0 AND l.archived = 0 AND (
+      EXISTS (SELECT 1 FROM card_members cm WHERE cm.card_id = c.id AND cm.member_id = @me)
+      OR EXISTS (SELECT 1 FROM checklists k JOIN check_items ci ON ci.checklist_id = k.id
+                 WHERE k.card_id = c.id AND ci.assignee_id = @me AND ci.checked = 0))
+    ORDER BY c.due_at IS NULL, c.due_at, b.id, l.pos, c.pos`).all({ me });
+  const itemsStmt = db.prepare(`
+    SELECT ci.id, ci.name FROM checklists k JOIN check_items ci ON ci.checklist_id = k.id
+    WHERE k.card_id = ? AND ci.assignee_id = ? AND ci.checked = 0 ORDER BY k.pos, ci.pos`);
+  res.json({
+    cards: rows.map((r) => ({ ...r, is_member: !!r.is_member, due_complete: !!r.due_complete, my_items: itemsStmt.all(r.id, me) }))
+  });
+});
+
+/* -------------------------------- Export CSV -------------------------------- */
+
+// Une ligne par carte active ; « ; » et BOM UTF-8 pour Excel en français. Les cellules qui commencent
+// par = + - @ sont préfixées d'une apostrophe (pas d'exécution de formule à l'ouverture).
+function csvCell(v) {
+  let s = v == null ? '' : String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+app.get('/api/board/:id/export.csv', (req, res) => {
+  const board = getBoard(req.params.id);
+  if (!board) return notFound(res);
+  const cards = db.prepare(`
+    SELECT c.*, l.name AS list_name FROM cards c JOIN lists l ON l.id = c.list_id
+    WHERE l.board_id = ? AND l.archived = 0 AND c.archived = 0 ORDER BY l.pos, c.pos`).all(board.id);
+  const q = {
+    labels: db.prepare('SELECT l.name FROM card_labels cl JOIN labels l ON l.id = cl.label_id WHERE cl.card_id = ? ORDER BY l.id'),
+    members: db.prepare('SELECT m.name FROM card_members cm JOIN members m ON m.id = cm.member_id WHERE cm.card_id = ? ORDER BY m.id'),
+    check: db.prepare(`SELECT COUNT(ci.id) AS total, COALESCE(SUM(ci.checked),0) AS done
+      FROM checklists k JOIN check_items ci ON ci.checklist_id = k.id WHERE k.card_id = ?`),
+    comments: db.prepare('SELECT COUNT(*) AS n FROM comments WHERE card_id = ?'),
+    attachments: db.prepare('SELECT COUNT(*) AS n FROM attachments WHERE card_id = ?'),
+    votes: db.prepare('SELECT COUNT(*) AS n FROM card_votes WHERE card_id = ?')
+  };
+  const head = ['Liste', 'Titre', 'Description', 'Début', 'Échéance', 'Échéance terminée', 'Étiquettes', 'Membres',
+    'Checklist', 'Commentaires', 'Pièces jointes', 'Votes', 'Créée le'];
+  const lines = [head.map(csvCell).join(';')];
+  for (const c of cards) {
+    const ck = q.check.get(c.id);
+    lines.push([
+      c.list_name, c.title, c.description, c.start_at, c.due_at ? c.due_at.replace('T', ' ') : '',
+      c.due_at ? (c.due_complete ? 'oui' : 'non') : '',
+      q.labels.all(c.id).map((r) => r.name).join(', '), q.members.all(c.id).map((r) => r.name).join(', '),
+      ck.total ? `${ck.done}/${ck.total}` : '', q.comments.get(c.id).n, q.attachments.get(c.id).n, q.votes.get(c.id).n,
+      String(c.created_at).slice(0, 10)
+    ].map(csvCell).join(';'));
+  }
+  const slug = board.name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'tableau';
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="la-boite-${slug}.csv"`);
+  res.send('﻿' + lines.join('\r\n') + '\r\n');
 });
 
 /* ------------------------------ Activité tableau --------------------------- */

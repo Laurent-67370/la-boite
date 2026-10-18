@@ -944,6 +944,133 @@ let killed = false;
     check('42. garde-fou : un rafraîchissement temps réel conserve le défilement horizontal', before42 > 0 && after42 === before42,
       `${before42}/${after42}`);
     await mob.close();
+
+    /* ============================ v1.6.0 ============================ */
+
+    /* 43. Élément de checklist confié à un membre → notification, journal, « Mes cartes » */
+    const aCard = (await req('POST', '/api/cards', { list_id: enCours.id, title: 'Carte à répartir' })).json.card;
+    const aCl = (await req('POST', `/api/cards/${aCard.id}/checklists`, { name: 'Tâches' })).json.checklist;
+    const aIt = (await req('POST', `/api/checklists/${aCl.id}/items`, { name: 'Appeler le fournisseur' })).json.item;
+    const assign = await req('PATCH', `/api/checkitems/${aIt.id}`, { assignee_id: 4 }, AS(1));
+    const aDet = await req('GET', `/api/cards/${aCard.id}`);
+    const n4b = await req('GET', '/api/members/4/notifications', null, AS(4));
+    const mine4 = await req('GET', '/api/me/cards', null, AS(4));
+    const badAssignee = await req('PATCH', `/api/checkitems/${aIt.id}`, { assignee_id: 999 }, AS(1));
+    check('43a. élément confié : nom affiché, notification, journal, visible dans « Mes cartes » du membre',
+      assign.status === 200 && aDet.json.checklists[0].items[0].assignee_name === 'Julia' &&
+      n4b.json.notifications.some((n) => n.kind === 'item_assigned' && /Appeler le fournisseur/.test(n.text)) &&
+      aDet.json.activity.some((a) => a.kind === 'item_assigned') &&
+      mine4.json.cards.some((c) => c.id === aCard.id && c.my_items.some((i) => i.id === aIt.id) && !c.is_member) &&
+      badAssignee.status === 400,
+      JSON.stringify({ a: assign.status, bad: badAssignee.status, mine: mine4.json.cards.map((c) => c.id) }));
+    await req('PATCH', `/api/checkitems/${aIt.id}`, { checked: true }, AS(1));
+    const mine4b = await req('GET', '/api/me/cards', null, AS(4));
+    const mine1 = await req('GET', '/api/me/cards', null, AS(1));
+    check('43b. « Mes cartes » : élément coché → la carte sort ; membre de carte → incluse (tous tableaux)',
+      !mine4b.json.cards.some((c) => c.id === aCard.id) && mine1.json.cards.some((c) => c.is_member && c.title === 'Publier l’annonce'),
+      JSON.stringify(mine4b.json.cards.map((c) => c.id)));
+
+    /* 44. Export CSV */
+    const evil = (await req('POST', '/api/cards', { list_id: aFaire.id, title: '=HYPERLINK("http://x")' })).json.card;
+    await req('PATCH', `/api/cards/${evil.id}`, { description: 'ligne 1; avec "guillemets"\nligne 2' });
+    const csv = await rawReq('GET', '/api/board/1/export.csv', Buffer.alloc(0), {});
+    const text = csv.body.toString('utf8');
+    const csvLines = text.replace(/^﻿/, '').split('\r\n');
+    check('44. export CSV : BOM UTF-8, « ; », en-têtes, formule neutralisée, guillemets échappés, cartes archivées exclues',
+      csv.status === 200 && /text\/csv/.test(csv.headers['content-type']) && /attachment; filename="la-boite-projet-demo\.csv"/.test(csv.headers['content-disposition']) &&
+      text.startsWith('﻿') && csvLines[0].startsWith('Liste;Titre;Description;Début;Échéance') &&
+      text.includes(`;"'=HYPERLINK(""http://x"")";`) && text.includes('"ligne 1; avec ""guillemets""\nligne 2"'),
+      text.slice(0, 300));
+    const archivedCsv = (await req('POST', '/api/cards', { list_id: aFaire.id, title: 'Archivée pour le CSV' })).json.card;
+    await req('DELETE', `/api/cards/${archivedCsv.id}`);
+    const csv2 = (await rawReq('GET', '/api/board/1/export.csv', Buffer.alloc(0), {})).body.toString('utf8');
+    check('44b. export CSV : une carte à la corbeille n’apparaît pas', !csv2.includes('Archivée pour le CSV') && csv2.includes('Carte à répartir'), '');
+
+    /* 45. Compte invité : lecture seule */
+    const { execFileSync: runSync } = require('child_process');
+    runSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'set-code.cjs'), 'Invité', '13572468', '--guest'], { env: { ...process.env, DB }, stdio: 'pipe' });
+    const gMembers = (await req('GET', '/api/auth/members', null, { ANON: 1 })).json.members;
+    const guestId = gMembers.find((m) => m.role === 'guest').id;
+    const gLogin = await req('POST', '/api/auth/login', { member_id: guestId, code: '13572468' }, { ANON: 1 });
+    const gCookie = [].concat(gLogin.headers['set-cookie'] || [])[0].split(';')[0];
+    const G = { Cookie: gCookie };
+    const gBoard = await req('GET', '/api/board/1', null, G);
+    const gWrites = [
+      await req('POST', '/api/cards', { list_id: aFaire.id, title: 'invité' }, G),
+      await req('PATCH', `/api/cards/${aCard.id}`, { title: 'piraté' }, G),
+      await req('POST', `/api/cards/${aCard.id}/comments`, { text: 'coucou' }, G),
+      await req('POST', '/api/auth/code', { current: '13572468', next: '24681357' }, G),
+      await rawReq('POST', `/api/cards/${aCard.id}/attachments`, Buffer.from('x'), { 'Content-Type': 'text/plain', 'X-File-Name': 'x.txt', Cookie: gCookie })
+    ].map((r) => r.status);
+    const gCsv = await rawReq('GET', '/api/board/1/export.csv', Buffer.alloc(0), G);
+    const asMember = await req('POST', `/api/cards/${aCard.id}/members`, { member_id: guestId }, AS(1));
+    let gOut = await req('POST', '/api/auth/logout', null, G);
+    check('45a. invité : lecture et export OK, toute écriture → 403, absent des membres assignables, déconnexion possible',
+      gLogin.status === 200 && gBoard.status === 200 && gWrites.every((st) => st === 403) && gCsv.status === 200 &&
+      !gBoard.json.members.some((m) => m.id === guestId) && asMember.status === 404 && gOut.status === 200,
+      JSON.stringify({ gWrites, b: gBoard.status, asMember: asMember.status, out: gOut.status }));
+    const gl2 = await req('POST', '/api/auth/login', { member_id: guestId, code: '13572468' }, { ANON: 1 });
+    const gCtx = await browser.newContext({ baseURL: BASE, locale: 'fr-FR' });
+    const [gn, gv] = [].concat(gl2.headers['set-cookie'])[0].split(';')[0].split('=');
+    await gCtx.addCookies([{ name: gn, value: gv, url: BASE }]);
+    const gp = await gCtx.newPage();
+    await gp.goto('/', { waitUntil: 'domcontentloaded' });
+    await gp.waitForSelector('.list-card', { timeout: 10000 });
+    const gUi = await gp.evaluate(() => ({
+      ro: document.body.classList.contains('read-only'),
+      chip: !document.querySelector('#readonly-chip').hidden,
+      addVisible: [...document.querySelectorAll('.add-card-btn')].some((b) => b.offsetParent !== null),
+      draggable: [...document.querySelectorAll('.list-card')].some((c) => c.draggable)
+    }));
+    await gp.click(`.list-card[data-card-id="${aCard.id}"]`);
+    await gp.waitForSelector('#modal-checklists .check-item', { timeout: 5000 });
+    await gp.waitForTimeout(200);
+    const gModal = await gp.evaluate(() => ({
+      titleDisabled: document.querySelector('#modal-title').disabled,
+      checkboxDisabled: document.querySelector('#modal-checklists input[type=checkbox]').disabled,
+      commentHidden: document.querySelector('.comment-composer').offsetParent === null,
+      closeEnabled: !document.querySelector('#modal-close').disabled
+    }));
+    await gp.keyboard.press('Escape');
+    await gp.keyboard.press('n');
+    const gNoComposer = await gp.evaluate(() => !document.querySelector('.composer'));
+    check('45b. UI invité : pastille « Lecture seule », pas d’ajout ni de glisser, carte en lecture, n sans effet',
+      gUi.ro && gUi.chip && !gUi.addVisible && !gUi.draggable && gModal.titleDisabled && gModal.checkboxDisabled &&
+      gModal.commentHidden && gModal.closeEnabled && gNoComposer, JSON.stringify({ gUi, gModal, gNoComposer }));
+    await gCtx.close();
+
+    /* 46. Vues Calendrier, Liste, Mes cartes */
+    const nowD = new Date();
+    const thisMonthDue = `${nowD.getFullYear()}-${String(nowD.getMonth() + 1).padStart(2, '0')}-14T10:00`;
+    await req('PATCH', `/api/cards/${aCard.id}`, { due_at: thisMonthDue });
+    await page.evaluate(() => document.querySelector('#modal-overlay').hidden || document.querySelector('#modal-close').click());
+    await page.click('#view-switch [data-view="calendar"]');
+    await page.waitForSelector(`#view-alt .cal-cell[data-day="${thisMonthDue.slice(0, 10)}"] .cal-card[data-card-id="${aCard.id}"]`, { timeout: 6000 });
+    await page.click(`.cal-card[data-card-id="${aCard.id}"]`);
+    await page.waitForFunction(() => !document.querySelector('#modal-overlay').hidden, null, { timeout: 5000 });
+    const calModalTitle = await page.inputValue('#modal-title');
+    await page.click('#modal-close');
+    await page.click('#view-switch [data-view="list"]');
+    await page.waitForSelector('#view-alt table.list-view tbody tr', { timeout: 6000 });
+    const rowsAll = await page.$$eval('#view-alt tbody tr', (r) => r.length);
+    const boardCount = (await req('GET', '/api/board/1')).json.lists.reduce((n, l) => n + l.cards.length, 0);
+    await page.click('#view-alt th button[data-sort="title"]');
+    const titles = await page.$$eval('#view-alt tbody tr td:first-child', (t) => t.map((x) => x.textContent));
+    const sorted = [...titles].sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0));
+    await page.fill('#search-input', 'répartir');
+    await page.waitForFunction(() => document.querySelectorAll('#view-alt tbody tr').length === 1, null, { timeout: 6000 });
+    await page.fill('#search-input', '');
+    await page.waitForFunction((n) => document.querySelectorAll('#view-alt tbody tr').length === n, rowsAll, { timeout: 6000 });
+    await page.click('#view-switch [data-view="mine"]');
+    await page.waitForSelector('#view-alt .mine-card', { timeout: 6000 });
+    const mineShown = await page.$$eval('#view-alt .mine-card .mine-title', (t) => t.map((x) => x.textContent));
+    const persisted = await page.evaluate(() => localStorage.getItem('laboite.view'));
+    await page.click('#view-switch [data-view="board"]');
+    await page.waitForSelector('#board-scroller:not([hidden]) .list-card', { timeout: 6000 });
+    check('46. vues : calendrier (carte au bon jour, clic → carte), liste (toutes les cartes, tri, recherche), mes cartes, choix mémorisé',
+      calModalTitle === 'Carte à répartir' && rowsAll === boardCount && JSON.stringify(titles) === JSON.stringify(sorted) &&
+      mineShown.includes('Publier l’annonce') && persisted === 'mine',
+      JSON.stringify({ calModalTitle, rowsAll, boardCount, mineShown, persisted }));
   } catch (e) {
     check('erreur inattendue', false, e.message || e);
   } finally {
