@@ -1071,6 +1071,24 @@ let killed = false;
       calModalTitle === 'Carte à répartir' && rowsAll === boardCount && JSON.stringify(titles) === JSON.stringify(sorted) &&
       mineShown.includes('Publier l’annonce') && persisted === 'mine',
       JSON.stringify({ calModalTitle, rowsAll, boardCount, mineShown, persisted }));
+
+    /* 47. Mise à jour : les fichiers statiques sont versionnés, un ancien cache ne peut pas les resservir */
+    const ver = require('../package.json').version;
+    const htmls = await Promise.all(['/', '/index.html', '/board/1'].map((u) => req('GET', u)));
+    const versioned = htmls.every((h) => h.status === 200 && h.text.includes(`href="/style.css?v=${ver}"`) && h.text.includes(`src="/app.js?v=${ver}"`));
+    const stale = await page.evaluate(async () => {
+      const c = await caches.open('la-boite-v7');
+      await c.put('/app.js', new Response('/* ancien */'));
+      await c.put('/style.css', new Response('/* ancien */'));
+      const js = document.querySelector('script[src^="/app.js"]').getAttribute('src');
+      const css = document.querySelector('link[href^="/style.css"]').getAttribute('href');
+      const served = await Promise.all([js, css].map(async (u) => { const r = await caches.match(u); return r ? r.text() : ''; }));
+      const hits = served.filter((t) => t === '/* ancien */').length;
+      await caches.delete('la-boite-v7');
+      return { js, css, hits };
+    });
+    check('47. mise à jour : style.css et app.js versionnés dans la page, un cache périmé ne les sert plus',
+      versioned && stale.hits === 0 && stale.js === `/app.js?v=${ver}`, JSON.stringify({ versioned, stale }));
   } catch (e) {
     check('erreur inattendue', false, e.message || e);
   } finally {

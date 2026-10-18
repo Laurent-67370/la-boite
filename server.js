@@ -1139,6 +1139,16 @@ app.use('/api', (_req, res) => notFound(res));
 /* ------------------------------ Statique ----------------------------- */
 
 const PUB = path.join(__dirname, 'public');
+// index.html pointe vers /style.css?v=<version> et /app.js?v=<version> : une nouvelle
+// version change l'URL, donc ni le navigateur ni le service worker ne resservent l'ancien fichier.
+const ASSET_VERSION = encodeURIComponent(require('./package.json').version);
+const INDEX_HTML = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8')
+  .replace(/(href|src)="\/(style\.css|app\.js)"/g, `$1="/$2?v=${ASSET_VERSION}"`);
+function sendIndex(_req, res) {
+  res.setHeader('Cache-Control', 'no-cache');
+  res.type('html').send(INDEX_HTML);
+}
+app.get(['/', '/index.html'], sendIndex);
 app.use(express.static(PUB, {
   setHeaders(res, filePath) {
     if (/(^|\/)(index\.html|sw\.js|manifest\.webmanifest)$/.test(filePath)) {
@@ -1146,7 +1156,7 @@ app.use(express.static(PUB, {
     }
   }
 }));
-app.get('*', (_req, res) => res.sendFile(path.join(PUB, 'index.html')));
+app.get('*', sendIndex);
 
 // Dernier recours : erreur JSON (jamais de page HTML pour l'API)
 // eslint-disable-next-line no-unused-vars

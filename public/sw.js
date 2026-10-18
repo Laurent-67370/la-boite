@@ -1,11 +1,9 @@
 // sw.js — « La Boîte » : cache-first pour le statique, network-first pour les navigations
 'use strict';
 
-const CACHE = 'la-boite-v7';
+const CACHE = 'la-boite-v8';
 const CORE = [
   '/',
-  '/style.css',
-  '/app.js',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
@@ -13,7 +11,10 @@ const CORE = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(CORE)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      // cache: 'reload' : on contourne le cache HTTP pour ne jamais figer une copie périmée
+      .then((cache) => cache.addAll(CORE.map((u) => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
   );
 });
 
